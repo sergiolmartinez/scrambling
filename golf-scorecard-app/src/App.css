@@ -2,41 +2,38 @@
 body {
     margin: 0;
     font-family: 'Roboto', Arial, sans-serif;
-    background-color: #f4f4f9; /* Light gray background for better contrast */
-    color: #333; /* Dark text for readability */
+    background-color: #f4f4f9;
+    color: #333;
 }
 
-/* Header styling */
-h1 {
+/* Center content */
+.App {
     text-align: center;
-    color: #1976d2; /* Material-UI primary blue */
-    margin-top: 20px;
-    font-size: 2.5rem;
+    padding: 20px;
 }
 
-/* Form styling */
-form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    margin: 20px 0;
-}
-
-/* Input fields */
-input[type="text"],
-input[type="number"] {
-    padding: 10px;
+table {
+    margin: 20px auto;
+    border-collapse: collapse;
     width: 80%;
-    max-width: 400px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Submit button */
-button[type="submit"] {
+th, td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+}
+
+th {
+    background-color: #1976d2;
+    color: white;
+}
+
+button {
     padding: 10px 20px;
+    margin: 10px;
     background-color: #1976d2;
     color: white;
     border: none;
@@ -46,36 +43,6 @@ button[type="submit"] {
     transition: background-color 0.3s ease;
 }
 
-button[type="submit"]:hover {
-    background-color: #1565c0; /* Darker blue on hover */
-}
-
-/* Scorecard styling */
-ul {
-    list-style: none;
-    padding: 0;
-    margin: 20px auto;
-    max-width: 600px;
-}
-
-li {
-    padding: 10px 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    margin-bottom: 10px;
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* Footer styling */
-footer {
-    text-align: center;
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #1976d2;
-    color: white;
-    font-size: 14px;
+button:hover {
+    background-color: #1565c0;
 }

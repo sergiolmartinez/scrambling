@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
-import ScoreCard from './components/ScoreCard';
-import PlayerInput from './components/PlayerInput';
+import Home from './components/Home';
+import Game from './components/Game';
 import './App.css';
 
 const App: React.FC = () => {
-    const [players, setPlayers] = useState<{ name: string; score: number }[]>([]);
+    const [currentPage, setCurrentPage] = useState<'home' | 'game'>('home');
+    const [players, setPlayers] = useState<string[]>([]);
 
-    const addPlayer = (name: string, score: number) => {
-        setPlayers([...players, { name, score }]);
+    const startGame = (playerNames: string[]) => {
+        setPlayers(playerNames);
+        setCurrentPage('game');
     };
 
     return (
         <div className="App">
-            <h1>Golf Scorecard</h1>
-            <PlayerInput addPlayer={addPlayer} />
-            <ScoreCard players={players} />
+            {currentPage === 'home' ? (
+                <Home startGame={startGame} />
+            ) : (
+                <Game players={players} />
+            )}
         </div>
     );
 };
