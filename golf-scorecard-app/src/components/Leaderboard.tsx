@@ -3,20 +3,38 @@ import React from 'react';
 interface LeaderboardProps {
     players: string[];
     strokes: string[][];
+    shotTypes: string[][];
     goToGame: () => void;
 }
 
-const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, goToGame }) => {
+const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, goToGame }) => {
+    const shotTypeOptions = [
+        'Drive',
+        'Par 3',
+        'Hybrid',
+        'Iron',
+        'Approach',
+        'Chip',
+        'Putt',
+    ]; // Exclude "Water Hazard"
+
     const calculateScores = () => {
-        const scores: { [key: string]: number } = {};
+        const scores: { [player: string]: { [shotType: string]: number } } = {};
+
+        // Initialize scores for each player and shot type
         players.forEach((player) => {
-            scores[player] = 0;
+            scores[player] = {};
+            shotTypeOptions.forEach((shotType) => {
+                scores[player][shotType] = 0;
+            });
         });
 
-        strokes.forEach((hole) => {
-            hole.forEach((player) => {
-                if (player) {
-                    scores[player] += 1; // Add 1 point per stroke
+        // Calculate scores based on strokes and shot types
+        strokes.forEach((hole, holeIndex) => {
+            hole.forEach((player, strokeIndex) => {
+                const shotType = shotTypes[holeIndex]?.[strokeIndex];
+                if (player && shotType && shotTypeOptions.includes(shotType)) {
+                    scores[player][shotType] += 1; // Increment the score for the player and shot type
                 }
             });
         });
@@ -29,23 +47,47 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, goToGame })
     return (
         <div>
             <h1>Leaderboard</h1>
-            <table>
+            <table style={{ margin: '0 auto', borderCollapse: 'collapse', width: '90%' }}>
                 <thead>
                     <tr>
                         <th>Player</th>
-                        <th>Score</th>
+                        {shotTypeOptions.map((shotType) => (
+                            <th key={shotType}>{shotType}</th>
+                        ))}
+                        <th>Total</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {Object.entries(scores).map(([player, score]) => (
+                    {players.map((player) => (
                         <tr key={player}>
                             <td>{player}</td>
-                            <td>{score}</td>
+                            {shotTypeOptions.map((shotType) => (
+                                <td key={shotType}>{scores[player][shotType]}</td>
+                            ))}
+                            <td>
+                                {shotTypeOptions.reduce(
+                                    (total, shotType) => total + scores[player][shotType],
+                                    0
+                                )}
+                            </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
-            <button onClick={goToGame}>Back to Game</button>
+            <button
+                onClick={goToGame}
+                style={{
+                    marginTop: '20px',
+                    padding: '10px 20px',
+                    backgroundColor: '#1976d2',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                }}
+            >
+                Back to Game
+            </button>
         </div>
     );
 };

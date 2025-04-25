@@ -38,6 +38,7 @@ const App: React.FC = () => {
                 <Leaderboard
                     players={players}
                     strokes={strokes}
+                    shotTypes={shotTypes} // Pass shotTypes to Leaderboard
                     goToGame={() => setCurrentPage('game')}
                 />
             )}
