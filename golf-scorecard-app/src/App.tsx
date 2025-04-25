@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ScoreCard from './components/ScoreCard';
 import PlayerInput from './components/PlayerInput';
-import './styles/App.css';
+import './App.css';
 
 const App: React.FC = () => {
     const [players, setPlayers] = useState<{ name: string; score: number }[]>([]);
