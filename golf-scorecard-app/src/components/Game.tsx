@@ -50,6 +50,21 @@ const Game: React.FC<GameProps> = ({
         setShotTypes(updatedShotTypes);
     };
 
+    const removeStroke = (strokeIndex: number) => {
+        const updatedStrokes = [...strokes];
+        const updatedShotTypes = [...shotTypes];
+
+        if (updatedStrokes[currentHole - 1]) {
+            updatedStrokes[currentHole - 1].splice(strokeIndex, 1); // Remove the stroke
+        }
+        if (updatedShotTypes[currentHole - 1]) {
+            updatedShotTypes[currentHole - 1].splice(strokeIndex, 1); // Remove the shot type
+        }
+
+        setStrokes(updatedStrokes);
+        setShotTypes(updatedShotTypes);
+    };
+
     const markPlayerForStroke = (strokeIndex: number, playerName: string) => {
         const updatedStrokes = [...strokes];
         updatedStrokes[currentHole - 1][strokeIndex] = playerName; // Mark the player for the stroke
@@ -99,7 +114,21 @@ const Game: React.FC<GameProps> = ({
                 <tbody>
                     {strokes[currentHole - 1]?.map((player, index) => (
                         <tr key={index}>
-                            <td>Stroke {index + 1}</td>
+                            <td>
+                                Stroke {index + 1}{' '}
+                                <span
+                                    onClick={() => removeStroke(index)}
+                                    style={{
+                                        cursor: 'pointer',
+                                        color: 'red',
+                                        marginLeft: '10px',
+                                        fontSize: '1.2rem',
+                                    }}
+                                    title="Remove Stroke"
+                                >
+                                    🚫
+                                </span>
+                            </td>
                             <td>{player || 'Unassigned'}</td>
                             <td>
                                 <select
