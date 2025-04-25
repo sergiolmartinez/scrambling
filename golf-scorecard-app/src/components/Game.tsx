@@ -7,11 +7,26 @@ interface GameProps {
 const Game: React.FC<GameProps> = ({ players }) => {
     const [currentHole, setCurrentHole] = useState(1);
     const [strokes, setStrokes] = useState<string[][]>([[]]); // Tracks which player's ball was used for each stroke
+    const [shotTypes, setShotTypes] = useState<string[][]>([[]]); // Tracks the shot type for each stroke
+
+    const shotTypeOptions = [
+        'Drive',
+        'Par 3',
+        'Hybrid',
+        'Iron',
+        'Approach',
+        'Chip',
+        'Putt',
+        'Water Hazard',
+    ];
 
     const addStroke = () => {
         const updatedStrokes = [...strokes];
+        const updatedShotTypes = [...shotTypes];
         updatedStrokes[currentHole - 1].push(''); // Add a new stroke for the current hole
+        updatedShotTypes[currentHole - 1].push(''); // Add a new shot type for the current hole
         setStrokes(updatedStrokes);
+        setShotTypes(updatedShotTypes);
     };
 
     const markPlayerForStroke = (strokeIndex: number, playerName: string) => {
@@ -20,11 +35,18 @@ const Game: React.FC<GameProps> = ({ players }) => {
         setStrokes(updatedStrokes);
     };
 
+    const selectShotType = (strokeIndex: number, shotType: string) => {
+        const updatedShotTypes = [...shotTypes];
+        updatedShotTypes[currentHole - 1][strokeIndex] = shotType; // Set the shot type for the stroke
+        setShotTypes(updatedShotTypes);
+    };
+
     const nextHole = () => {
         if (currentHole < 18) {
             setCurrentHole(currentHole + 1);
             if (!strokes[currentHole]) {
                 setStrokes([...strokes, []]); // Initialize strokes for the next hole
+                setShotTypes([...shotTypes, []]); // Initialize shot types for the next hole
             }
         } else {
             alert('Game Over!');
@@ -40,11 +62,12 @@ const Game: React.FC<GameProps> = ({ players }) => {
     return (
         <div>
             <h1>Hole {currentHole}</h1>
-            <table style={{ margin: '0 auto', borderCollapse: 'collapse', width: '80%' }}>
+            <table style={{ margin: '0 auto', borderCollapse: 'collapse', width: '90%' }}>
                 <thead>
                     <tr>
                         <th style={{ border: '1px solid #ccc', padding: '10px' }}>Stroke</th>
                         <th style={{ border: '1px solid #ccc', padding: '10px' }}>Player</th>
+                        <th style={{ border: '1px solid #ccc', padding: '10px' }}>Shot Type</th>
                         <th style={{ border: '1px solid #ccc', padding: '10px' }}>Actions</th>
                     </tr>
                 </thead>
@@ -56,6 +79,27 @@ const Game: React.FC<GameProps> = ({ players }) => {
                             </td>
                             <td style={{ border: '1px solid #ccc', padding: '10px' }}>
                                 {player || 'Unassigned'}
+                            </td>
+                            <td style={{ border: '1px solid #ccc', padding: '10px' }}>
+                                <select
+                                    value={shotTypes[currentHole - 1][index] || ''}
+                                    onChange={(e) => selectShotType(index, e.target.value)}
+                                    style={{
+                                        padding: '5px',
+                                        fontSize: '14px',
+                                        borderRadius: '5px',
+                                        border: '1px solid #ccc',
+                                    }}
+                                >
+                                    <option value="" disabled>
+                                        Select Shot Type
+                                    </option>
+                                    {shotTypeOptions.map((option) => (
+                                        <option key={option} value={option}>
+                                            {option}
+                                        </option>
+                                    ))}
+                                </select>
                             </td>
                             <td style={{ border: '1px solid #ccc', padding: '10px' }}>
                                 {players.map((playerName) => (

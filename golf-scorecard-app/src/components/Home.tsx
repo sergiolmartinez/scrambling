@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './Home.css'; // Import the CSS file for styling
 
 interface HomeProps {
     startGame: (playerNames: string[]) => void;
@@ -23,19 +24,28 @@ const Home: React.FC<HomeProps> = ({ startGame }) => {
     };
 
     return (
-        <div>
+        <div className="home-container">
             <h1>Enter Player Names</h1>
-            {playerNames.map((name, index) => (
-                <input
-                    key={index}
-                    type="text"
-                    placeholder={`Player ${index + 1}`}
-                    value={name}
-                    onChange={(e) => handleNameChange(index, e.target.value)}
-                />
-            ))}
-            <button onClick={addPlayer}>Add Player</button>
-            <button onClick={handleStartGame}>Start Game</button>
+            <div className="player-inputs">
+                {playerNames.map((name, index) => (
+                    <div key={index} className="player-input">
+                        <input
+                            type="text"
+                            placeholder={`Player ${index + 1}`}
+                            value={name}
+                            onChange={(e) => handleNameChange(index, e.target.value)}
+                        />
+                        {index === playerNames.length - 1 && (
+                            <button onClick={addPlayer} className="add-player-button">
+                                Add Player
+                            </button>
+                        )}
+                    </div>
+                ))}
+            </div>
+            <button onClick={handleStartGame} className="start-game-button">
+                Start Game
+            </button>
         </div>
     );
 };
