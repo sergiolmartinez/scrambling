@@ -1,14 +1,26 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 interface GameProps {
     players: string[];
+    strokes: string[][];
+    setStrokes: React.Dispatch<React.SetStateAction<string[][]>>;
+    shotTypes: string[][];
+    setShotTypes: React.Dispatch<React.SetStateAction<string[][]>>;
+    currentHole: number;
+    setCurrentHole: React.Dispatch<React.SetStateAction<number>>;
+    goToLeaderboard: () => void;
 }
 
-const Game: React.FC<GameProps> = ({ players }) => {
-    const [currentHole, setCurrentHole] = useState(1);
-    const [strokes, setStrokes] = useState<string[][]>([[]]); // Tracks which player's ball was used for each stroke
-    const [shotTypes, setShotTypes] = useState<string[][]>([[]]); // Tracks the shot type for each stroke
-
+const Game: React.FC<GameProps> = ({
+    players,
+    strokes,
+    setStrokes,
+    shotTypes,
+    setShotTypes,
+    currentHole,
+    setCurrentHole,
+    goToLeaderboard,
+}) => {
     const shotTypeOptions = [
         'Drive',
         'Par 3',
@@ -23,8 +35,17 @@ const Game: React.FC<GameProps> = ({ players }) => {
     const addStroke = () => {
         const updatedStrokes = [...strokes];
         const updatedShotTypes = [...shotTypes];
+
+        if (!updatedStrokes[currentHole - 1]) {
+            updatedStrokes[currentHole - 1] = [];
+        }
+        if (!updatedShotTypes[currentHole - 1]) {
+            updatedShotTypes[currentHole - 1] = [];
+        }
+
         updatedStrokes[currentHole - 1].push(''); // Add a new stroke for the current hole
         updatedShotTypes[currentHole - 1].push(''); // Add a new shot type for the current hole
+
         setStrokes(updatedStrokes);
         setShotTypes(updatedShotTypes);
     };
@@ -44,9 +65,13 @@ const Game: React.FC<GameProps> = ({ players }) => {
     const nextHole = () => {
         if (currentHole < 18) {
             setCurrentHole(currentHole + 1);
+
+            // Initialize strokes and shot types for the next hole if not already present
             if (!strokes[currentHole]) {
-                setStrokes([...strokes, []]); // Initialize strokes for the next hole
-                setShotTypes([...shotTypes, []]); // Initialize shot types for the next hole
+                setStrokes([...strokes, []]);
+            }
+            if (!shotTypes[currentHole]) {
+                setShotTypes([...shotTypes, []]);
             }
         } else {
             alert('Game Over!');
@@ -65,24 +90,20 @@ const Game: React.FC<GameProps> = ({ players }) => {
             <table style={{ margin: '0 auto', borderCollapse: 'collapse', width: '90%' }}>
                 <thead>
                     <tr>
-                        <th style={{ border: '1px solid #ccc', padding: '10px' }}>Stroke</th>
-                        <th style={{ border: '1px solid #ccc', padding: '10px' }}>Player</th>
-                        <th style={{ border: '1px solid #ccc', padding: '10px' }}>Shot Type</th>
-                        <th style={{ border: '1px solid #ccc', padding: '10px' }}>Actions</th>
+                        <th>Stroke</th>
+                        <th>Player</th>
+                        <th>Shot Type</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {strokes[currentHole - 1].map((player, index) => (
+                    {strokes[currentHole - 1]?.map((player, index) => (
                         <tr key={index}>
-                            <td style={{ border: '1px solid #ccc', padding: '10px' }}>
-                                Stroke {index + 1}
-                            </td>
-                            <td style={{ border: '1px solid #ccc', padding: '10px' }}>
-                                {player || 'Unassigned'}
-                            </td>
-                            <td style={{ border: '1px solid #ccc', padding: '10px' }}>
+                            <td>Stroke {index + 1}</td>
+                            <td>{player || 'Unassigned'}</td>
+                            <td>
                                 <select
-                                    value={shotTypes[currentHole - 1][index] || ''}
+                                    value={shotTypes[currentHole - 1]?.[index] || ''}
                                     onChange={(e) => selectShotType(index, e.target.value)}
                                     style={{
                                         padding: '5px',
@@ -101,7 +122,7 @@ const Game: React.FC<GameProps> = ({ players }) => {
                                     ))}
                                 </select>
                             </td>
-                            <td style={{ border: '1px solid #ccc', padding: '10px' }}>
+                            <td>
                                 {players.map((playerName) => (
                                     <button
                                         key={playerName}
@@ -124,50 +145,12 @@ const Game: React.FC<GameProps> = ({ players }) => {
                     ))}
                 </tbody>
             </table>
-            <button
-                onClick={addStroke}
-                style={{
-                    marginTop: '20px',
-                    padding: '10px 20px',
-                    backgroundColor: '#1976d2',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                }}
-            >
-                Add Stroke
+            <button onClick={addStroke}>Add Stroke</button>
+            <button onClick={previousHole} disabled={currentHole === 1}>
+                Back
             </button>
-            <div style={{ marginTop: '20px' }}>
-                <button
-                    onClick={previousHole}
-                    style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#1976d2',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer',
-                        marginRight: '10px',
-                    }}
-                    disabled={currentHole === 1} // Disable "Back" button on the first hole
-                >
-                    Back
-                </button>
-                <button
-                    onClick={nextHole}
-                    style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#1976d2',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer',
-                    }}
-                >
-                    {currentHole < 18 ? 'Next Hole' : 'Finish Game'}
-                </button>
-            </div>
+            <button onClick={nextHole}>{currentHole < 18 ? 'Next Hole' : 'Finish Game'}</button>
+            <button onClick={goToLeaderboard}>Leaderboard</button>
         </div>
     );
 };
