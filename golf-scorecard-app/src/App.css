@@ -46,3 +46,39 @@ button {
 button:hover {
     background-color: #1565c0;
 }
+
+/* Ensure the table is scrollable on smaller screens */
+table {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+}
+
+/* Adjust padding and font sizes for mobile devices */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.5rem;
+        text-align: center;
+    }
+
+    table {
+        font-size: 0.9rem;
+    }
+
+    button {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+
+    select {
+        font-size: 0.9rem;
+    }
+
+    td, th {
+        padding: 8px;
+    }
+
+    .remove-stroke {
+        font-size: 1rem;
+    }
+}

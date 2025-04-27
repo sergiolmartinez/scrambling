@@ -100,86 +100,155 @@ const Game: React.FC<GameProps> = ({
     };
 
     return (
-        <div>
-            <h1>Hole {currentHole}</h1>
-            <table style={{ margin: '0 auto', borderCollapse: 'collapse', width: '90%' }}>
-                <thead>
-                    <tr>
-                        <th>Stroke</th>
-                        <th>Player</th>
-                        <th>Shot Type</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {strokes[currentHole - 1]?.map((player, index) => (
-                        <tr key={index}>
-                            <td>
-                                Stroke {index + 1}{' '}
-                                <span
-                                    onClick={() => removeStroke(index)}
-                                    style={{
-                                        cursor: 'pointer',
-                                        color: 'red',
-                                        marginLeft: '10px',
-                                        fontSize: '1.2rem',
-                                    }}
-                                    title="Remove Stroke"
-                                >
-                                    🚫
-                                </span>
-                            </td>
-                            <td>{player || 'Unassigned'}</td>
-                            <td>
-                                <select
-                                    value={shotTypes[currentHole - 1]?.[index] || ''}
-                                    onChange={(e) => selectShotType(index, e.target.value)}
-                                    style={{
-                                        padding: '5px',
-                                        fontSize: '14px',
-                                        borderRadius: '5px',
-                                        border: '1px solid #ccc',
-                                    }}
-                                >
-                                    <option value="" disabled>
-                                        Select Shot Type
-                                    </option>
-                                    {shotTypeOptions.map((option) => (
-                                        <option key={option} value={option}>
-                                            {option}
-                                        </option>
-                                    ))}
-                                </select>
-                            </td>
-                            <td>
-                                {players.map((playerName) => (
-                                    <button
-                                        key={playerName}
-                                        onClick={() => markPlayerForStroke(index, playerName)}
-                                        style={{
-                                            padding: '5px 10px',
-                                            margin: '5px',
-                                            backgroundColor: '#1976d2',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '5px',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        {playerName}
-                                    </button>
-                                ))}
-                            </td>
+        <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+            <h1 style={{ textAlign: 'center', marginBottom: '20px' }}>Hole {currentHole}</h1>
+            <div style={{ overflowX: 'auto', marginBottom: '20px' }}>
+                <table
+                    style={{
+                        margin: '0 auto',
+                        borderCollapse: 'collapse',
+                        width: '100%',
+                        maxWidth: '100%',
+                        backgroundColor: '#ffffff',
+                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                    }}
+                >
+                    <thead>
+                        <tr style={{ backgroundColor: '#1976d2', color: 'white' }}>
+                            <th style={{ padding: '10px', textAlign: 'left', whiteSpace: 'nowrap' }}>Stroke</th>
+                            <th style={{ padding: '10px', textAlign: 'left', whiteSpace: 'nowrap' }}>Player</th>
+                            <th style={{ padding: '10px', textAlign: 'left', whiteSpace: 'nowrap' }}>Actions</th>
+                            <th style={{ padding: '10px', textAlign: 'left', whiteSpace: 'nowrap' }}>Shot Type</th>
                         </tr>
+                    </thead>
+                    <tbody>
+    {strokes[currentHole - 1]?.map((player, index) => (
+        <tr key={index}>
+            <td style={{ padding: '10px', border: '1px solid #ccc', whiteSpace: 'nowrap' }}>
+                Stroke {index + 1}{' '}
+                <span
+                    onClick={() => removeStroke(index)}
+                    style={{
+                        cursor: 'pointer',
+                        color: 'red',
+                        marginLeft: '10px',
+                        fontSize: '1.2rem',
+                    }}
+                    title="Remove Stroke"
+                >
+                    🚫
+                </span>
+            </td>
+            <td style={{ padding: '10px', border: '1px solid #ccc', whiteSpace: 'nowrap' }}>
+                {player || 'Unassigned'}
+            </td>
+            <td style={{ padding: '10px', border: '1px solid #ccc', whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    {players.map((playerName) => (
+                        <button
+                            key={playerName}
+                            onClick={() => markPlayerForStroke(index, playerName)}
+                            style={{
+                                padding: '10px',
+                                backgroundColor: '#1976d2',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '5px',
+                                cursor: 'pointer',
+                                textAlign: 'center',
+                            }}
+                        >
+                            {playerName}
+                        </button>
                     ))}
-                </tbody>
-            </table>
-            <button onClick={addStroke}>Add Stroke</button>
-            <button onClick={previousHole} disabled={currentHole === 1}>
-                Back
-            </button>
-            <button onClick={nextHole}>{currentHole < 18 ? 'Next Hole' : 'Finish Game'}</button>
-            <button onClick={goToLeaderboard}>Leaderboard</button>
+                </div>
+            </td>
+            <td style={{ padding: '10px', border: '1px solid #ccc', whiteSpace: 'nowrap' }}>
+                <select
+                    value={shotTypes[currentHole - 1]?.[index] || ''}
+                    onChange={(e) => selectShotType(index, e.target.value)}
+                    style={{
+                        padding: '5px',
+                        fontSize: '14px',
+                        borderRadius: '5px',
+                        border: '1px solid #ccc',
+                        maxWidth: '150px',
+                    }}
+                >
+                    <option value="" disabled>
+                        Select Shot Type
+                    </option>
+                    {shotTypeOptions.map((option) => (
+                        <option key={option} value={option}>
+                            {option}
+                        </option>
+                    ))}
+                </select>
+            </td>
+        </tr>
+    ))}
+</tbody>
+                </table>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+                <button
+                    onClick={addStroke}
+                    style={{
+                        padding: '10px 20px',
+                        margin: '10px',
+                        backgroundColor: '#1976d2',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                    }}
+                >
+                    Add Stroke
+                </button>
+                <button
+                    onClick={previousHole}
+                    disabled={currentHole === 1}
+                    style={{
+                        padding: '10px 20px',
+                        margin: '10px',
+                        backgroundColor: currentHole === 1 ? '#ccc' : '#1976d2',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: currentHole === 1 ? 'not-allowed' : 'pointer',
+                    }}
+                >
+                    Back
+                </button>
+                <button
+                    onClick={nextHole}
+                    style={{
+                        padding: '10px 20px',
+                        margin: '10px',
+                        backgroundColor: '#1976d2',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                    }}
+                >
+                    {currentHole < 18 ? 'Next Hole' : 'Finish Game'}
+                </button>
+                <button
+                    onClick={goToLeaderboard}
+                    style={{
+                        padding: '10px 20px',
+                        margin: '10px',
+                        backgroundColor: '#1976d2',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                    }}
+                >
+                    Leaderboard
+                </button>
+            </div>
         </div>
     );
 };
