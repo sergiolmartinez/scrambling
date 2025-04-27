@@ -16,12 +16,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, 
         'Approach',
         'Chip',
         'Putt',
-    ]; // Exclude "Water Hazard"
+    ];
 
     const calculateScores = () => {
         const scores: { [player: string]: { [shotType: string]: number } } = {};
 
-        // Initialize scores for each player and shot type
         players.forEach((player) => {
             scores[player] = {};
             shotTypeOptions.forEach((shotType) => {
@@ -29,12 +28,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, 
             });
         });
 
-        // Calculate scores based on strokes and shot types
         strokes.forEach((hole, holeIndex) => {
             hole.forEach((player, strokeIndex) => {
                 const shotType = shotTypes[holeIndex]?.[strokeIndex];
                 if (player && shotType && shotTypeOptions.includes(shotType)) {
-                    scores[player][shotType] += 1; // Increment the score for the player and shot type
+                    scores[player][shotType] += 1;
                 }
             });
         });
@@ -44,7 +42,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, 
 
     const scores = calculateScores();
 
-    // Find the player with the highest total score
     const getTotalScore = (player: string) =>
         shotTypeOptions.reduce((total, shotType) => total + scores[player][shotType], 0);
 
@@ -53,83 +50,111 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, 
     );
 
     return (
-        <div style={{ backgroundColor: '#e8f5e9', padding: '20px', borderRadius: '10px' }}>
-            <h1 style={{ textAlign: 'center', color: '#388e3c', fontSize: '2.5rem' }}>
-                🏌️‍♂️ Golf Leaderboard ⛳
-            </h1>
-            <table
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '20px',
+                minHeight: '100vh', // Center vertically
+                backgroundColor: '#e8f5e9', // Shaded green background
+            }}
+        >
+            <div
                 style={{
-                    margin: '20px auto',
-                    borderCollapse: 'collapse',
-                    width: '90%',
-                    backgroundColor: '#ffffff',
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                    width: '100%',
+                    maxWidth: '1200px', // Center the content within a max width
+                    backgroundColor: '#ffffff', // White background for the table
                     borderRadius: '10px',
-                    overflow: 'hidden',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                    padding: '20px',
                 }}
             >
-                <thead>
-                    <tr style={{ backgroundColor: '#388e3c', color: 'white' }}>
-                        <th style={{ padding: '10px', border: '1px solid #ccc' }}>Player</th>
-                        {shotTypeOptions.map((shotType) => (
-                            <th key={shotType} style={{ padding: '10px', border: '1px solid #ccc' }}>
-                                {shotType}
-                            </th>
-                        ))}
-                        <th style={{ padding: '10px', border: '1px solid #ccc' }}>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {players.map((player) => (
-                        <tr
-                            key={player}
-                            style={{
-                                backgroundColor: player === leader ? '#c8e6c9' : 'white',
-                                fontWeight: player === leader ? 'bold' : 'normal',
-                            }}
-                        >
-                            <td style={{ padding: '10px', border: '1px solid #ccc' }}>
-                                {player} {player === leader && '🏆'}
-                            </td>
-                            {shotTypeOptions.map((shotType) => (
-                                <td
-                                    key={shotType}
-                                    style={{ padding: '10px', border: '1px solid #ccc', textAlign: 'center' }}
+                <h1 style={{ textAlign: 'center', color: '#388e3c', fontSize: '2.5rem', marginBottom: '20px' }}>
+                    🏌️‍♂️ Leaderboard ⛳
+                </h1>
+                <div
+                    className="table-container"
+                    style={{
+                        overflowX: 'auto',
+                        WebkitOverflowScrolling: 'touch',
+                        marginBottom: '20px',
+                    }}
+                >
+                    <table
+                        style={{
+                            minWidth: '600px',
+                            borderCollapse: 'collapse',
+                            width: '100%',
+                            backgroundColor: '#ffffff',
+                        }}
+                    >
+                        <thead>
+                            <tr style={{ backgroundColor: '#388e3c', color: 'white' }}>
+                                <th style={{ padding: '10px', border: '1px solid #ccc' }}>Player</th>
+                                {shotTypeOptions.map((shotType) => (
+                                    <th key={shotType} style={{ padding: '10px', border: '1px solid #ccc' }}>
+                                        {shotType}
+                                    </th>
+                                ))}
+                                <th style={{ padding: '10px', border: '1px solid #ccc' }}>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {players.map((player) => (
+                                <tr
+                                    key={player}
+                                    style={{
+                                        backgroundColor: player === leader ? '#c8e6c9' : 'white',
+                                        fontWeight: player === leader ? 'bold' : 'normal',
+                                    }}
                                 >
-                                    {scores[player][shotType]}
-                                </td>
+                                    <td style={{ padding: '10px', border: '1px solid #ccc' }}>
+                                        {player} {player === leader && '🏆'}
+                                    </td>
+                                    {shotTypeOptions.map((shotType) => (
+                                        <td
+                                            key={shotType}
+                                            style={{ padding: '10px', border: '1px solid #ccc', textAlign: 'center' }}
+                                        >
+                                            {scores[player][shotType]}
+                                        </td>
+                                    ))}
+                                    <td
+                                        style={{
+                                            padding: '10px',
+                                            border: '1px solid #ccc',
+                                            textAlign: 'center',
+                                            backgroundColor: '#f1f8e9',
+                                        }}
+                                    >
+                                        {getTotalScore(player)}
+                                    </td>
+                                </tr>
                             ))}
-                            <td
-                                style={{
-                                    padding: '10px',
-                                    border: '1px solid #ccc',
-                                    textAlign: 'center',
-                                    backgroundColor: '#f1f8e9',
-                                }}
-                            >
-                                {getTotalScore(player)}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-            <button
-                onClick={goToGame}
-                style={{
-                    display: 'block',
-                    margin: '20px auto',
-                    padding: '10px 20px',
-                    backgroundColor: '#388e3c',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    fontSize: '16px',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.3s ease',
-                }}
-            >
-                Back to Game
-            </button>
+                        </tbody>
+                    </table>
+                </div>
+                <button
+                    onClick={goToGame}
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#388e3c',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        marginTop: '20px',
+                        display: 'block',
+                        marginLeft: 'auto',
+                        marginRight: 'auto',
+                    }}
+                >
+                    Back to Game
+                </button>
+            </div>
         </div>
     );
 };
