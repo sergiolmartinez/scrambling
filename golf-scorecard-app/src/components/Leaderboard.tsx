@@ -2,8 +2,8 @@ import React from 'react';
 
 interface LeaderboardProps {
     players: string[];
-    strokes: string[][];
-    shotTypes: string[][];
+    strokes: string[][][]; // Tracks selected players for each stroke
+    shotTypes: string[][][]; // Tracks shot types for each stroke
     goToGame: () => void;
 }
 
@@ -16,11 +16,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, 
         'Approach',
         'Chip',
         'Putt',
+        'Water Hazard',
     ];
 
     const calculateScores = () => {
         const scores: { [player: string]: { [shotType: string]: number } } = {};
 
+        // Initialize scores for each player and shot type
         players.forEach((player) => {
             scores[player] = {};
             shotTypeOptions.forEach((shotType) => {
@@ -28,12 +30,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, 
             });
         });
 
+        // Iterate over strokes and shotTypes to calculate scores
         strokes.forEach((hole, holeIndex) => {
-            hole.forEach((player, strokeIndex) => {
-                const shotType = shotTypes[holeIndex]?.[strokeIndex];
-                if (player && shotType && shotTypeOptions.includes(shotType)) {
-                    scores[player][shotType] += 1;
-                }
+            hole.forEach((strokePlayers, strokeIndex) => {
+                strokePlayers.forEach((player) => {
+                    const shotType = shotTypes[holeIndex]?.[strokeIndex]?.[0]; // Get the shot type for this stroke
+                    if (player && shotType && shotTypeOptions.includes(shotType)) {
+                        scores[player][shotType] += 1; // Increment the score for the player and shot type
+                    }
+                });
             });
         });
 

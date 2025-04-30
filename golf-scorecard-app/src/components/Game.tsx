@@ -2,10 +2,10 @@ import React from 'react';
 
 interface GameProps {
     players: string[];
-    strokes: string[][];
-    setStrokes: React.Dispatch<React.SetStateAction<string[][]>>;
-    shotTypes: string[][];
-    setShotTypes: React.Dispatch<React.SetStateAction<string[][]>>;
+    strokes: string[][][]; // Tracks selected players for each stroke
+    setStrokes: React.Dispatch<React.SetStateAction<string[][][]>>;
+    shotTypes: string[][][]; // Tracks shot types for each stroke
+    setShotTypes: React.Dispatch<React.SetStateAction<string[][][]>>;
     currentHole: number;
     setCurrentHole: React.Dispatch<React.SetStateAction<number>>;
     goToLeaderboard: () => void;
@@ -43,8 +43,8 @@ const Game: React.FC<GameProps> = ({
             updatedShotTypes[currentHole - 1] = [];
         }
 
-        updatedStrokes[currentHole - 1].push(''); // Add a new stroke for the current hole
-        updatedShotTypes[currentHole - 1].push(''); // Add a new shot type for the current hole
+        updatedStrokes[currentHole - 1].push([]); // Add a new stroke for the current hole
+        updatedShotTypes[currentHole - 1].push([]); // Add a new shot type for the current hole
 
         setStrokes(updatedStrokes);
         setShotTypes(updatedShotTypes);
@@ -65,15 +65,30 @@ const Game: React.FC<GameProps> = ({
         setShotTypes(updatedShotTypes);
     };
 
-    const markPlayerForStroke = (strokeIndex: number, playerName: string) => {
+    const togglePlayerForStroke = (strokeIndex: number, playerName: string) => {
         const updatedStrokes = [...strokes];
-        updatedStrokes[currentHole - 1][strokeIndex] = playerName; // Mark the player for the stroke
+        const currentStrokePlayers = updatedStrokes[currentHole - 1][strokeIndex] || [];
+
+        if (currentStrokePlayers.includes(playerName)) {
+            // Remove the player if already selected
+            updatedStrokes[currentHole - 1][strokeIndex] = currentStrokePlayers.filter(
+                (name) => name !== playerName
+            );
+        } else {
+            // Add the player if not already selected
+            updatedStrokes[currentHole - 1][strokeIndex] = [...currentStrokePlayers, playerName];
+        }
+
         setStrokes(updatedStrokes);
     };
 
     const selectShotType = (strokeIndex: number, shotType: string) => {
         const updatedShotTypes = [...shotTypes];
-        updatedShotTypes[currentHole - 1][strokeIndex] = shotType; // Set the shot type for the stroke
+        const currentPlayers = strokes[currentHole - 1][strokeIndex] || [];
+
+        // Assign the shot type to each selected player for this stroke
+        updatedShotTypes[currentHole - 1][strokeIndex] = currentPlayers.map(() => shotType);
+
         setShotTypes(updatedShotTypes);
     };
 
@@ -117,77 +132,75 @@ const Game: React.FC<GameProps> = ({
                         <tr style={{ backgroundColor: '#1976d2', color: 'white' }}>
                             <th style={{ padding: '10px', textAlign: 'left', whiteSpace: 'nowrap' }}>Stroke</th>
                             <th style={{ padding: '10px', textAlign: 'left', whiteSpace: 'nowrap' }}>Player</th>
-                            <th style={{ padding: '10px', textAlign: 'left', whiteSpace: 'nowrap' }}>Actions</th>
                             <th style={{ padding: '10px', textAlign: 'left', whiteSpace: 'nowrap' }}>Shot Type</th>
                         </tr>
                     </thead>
                     <tbody>
-    {strokes[currentHole - 1]?.map((player, index) => (
-        <tr key={index}>
-            <td style={{ padding: '10px', border: '1px solid #ccc', whiteSpace: 'nowrap' }}>
-                Stroke {index + 1}{' '}
-                <span
-                    onClick={() => removeStroke(index)}
-                    style={{
-                        cursor: 'pointer',
-                        color: 'red',
-                        marginLeft: '10px',
-                        fontSize: '1.2rem',
-                    }}
-                    title="Remove Stroke"
-                >
-                    🚫
-                </span>
-            </td>
-            <td style={{ padding: '10px', border: '1px solid #ccc', whiteSpace: 'nowrap' }}>
-                {player || 'Unassigned'}
-            </td>
-            <td style={{ padding: '10px', border: '1px solid #ccc', whiteSpace: 'nowrap' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    {players.map((playerName) => (
-                        <button
-                            key={playerName}
-                            onClick={() => markPlayerForStroke(index, playerName)}
-                            style={{
-                                padding: '10px',
-                                backgroundColor: '#1976d2',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '5px',
-                                cursor: 'pointer',
-                                textAlign: 'center',
-                            }}
-                        >
-                            {playerName}
-                        </button>
-                    ))}
-                </div>
-            </td>
-            <td style={{ padding: '10px', border: '1px solid #ccc', whiteSpace: 'nowrap' }}>
-                <select
-                    value={shotTypes[currentHole - 1]?.[index] || ''}
-                    onChange={(e) => selectShotType(index, e.target.value)}
-                    style={{
-                        padding: '5px',
-                        fontSize: '14px',
-                        borderRadius: '5px',
-                        border: '1px solid #ccc',
-                        maxWidth: '150px',
-                    }}
-                >
-                    <option value="" disabled>
-                        Select Shot Type
-                    </option>
-                    {shotTypeOptions.map((option) => (
-                        <option key={option} value={option}>
-                            {option}
-                        </option>
-                    ))}
-                </select>
-            </td>
-        </tr>
-    ))}
-</tbody>
+                        {strokes[currentHole - 1]?.map((strokePlayers, index) => (
+                            <tr key={index}>
+                                <td style={{ padding: '10px', border: '1px solid #ccc', whiteSpace: 'nowrap' }}>
+                                    Stroke {index + 1}{' '}
+                                    <span
+                                        onClick={() => removeStroke(index)}
+                                        style={{
+                                            cursor: 'pointer',
+                                            color: 'red',
+                                            marginLeft: '10px',
+                                            fontSize: '1.2rem',
+                                        }}
+                                        title="Remove Stroke"
+                                    >
+                                        🗑️
+                                    </span>
+                                </td>
+                                <td style={{ padding: '10px', border: '1px solid #ccc', whiteSpace: 'nowrap' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                        {players.map((playerName) => (
+                                            <button
+                                                key={playerName}
+                                                onClick={() => togglePlayerForStroke(index, playerName)}
+                                                style={{
+                                                    padding: '10px',
+                                                    backgroundColor: strokePlayers?.includes(playerName)
+                                                        ? '#1976d2'
+                                                        : '#ccc',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '5px',
+                                                    cursor: 'pointer',
+                                                    textAlign: 'center',
+                                                }}
+                                            >
+                                                {playerName}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </td>
+                                <td style={{ padding: '10px', border: '1px solid #ccc', whiteSpace: 'nowrap' }}>
+                                    <select
+                                        value={shotTypes[currentHole - 1]?.[index]?.[0] || ''}
+                                        onChange={(e) => selectShotType(index, e.target.value)}
+                                        style={{
+                                            padding: '5px',
+                                            fontSize: '14px',
+                                            borderRadius: '5px',
+                                            border: '1px solid #ccc',
+                                            maxWidth: '150px',
+                                        }}
+                                    >
+                                        <option value="" disabled>
+                                            Select Shot Type
+                                        </option>
+                                        {shotTypeOptions.map((option) => (
+                                            <option key={option} value={option}>
+                                                {option}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
                 </table>
             </div>
             <div style={{ textAlign: 'center' }}>
