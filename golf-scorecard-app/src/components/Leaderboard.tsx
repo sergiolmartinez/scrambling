@@ -16,8 +16,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, 
         'Approach',
         'Chip',
         'Putt',
-        'Water Hazard',
-    ];
+    ]; // Removed 'Water Hazard'
 
     const calculateScores = () => {
         const scores: { [player: string]: { [shotType: string]: number } } = {};
@@ -50,9 +49,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, 
     const getTotalScore = (player: string) =>
         shotTypeOptions.reduce((total, shotType) => total + scores[player][shotType], 0);
 
-    const leader = players.reduce((prev, curr) =>
-        getTotalScore(curr) > getTotalScore(prev) ? curr : prev
-    );
+    // Sort players by total score in descending order
+    const sortedPlayers = [...players].sort((a, b) => getTotalScore(b) - getTotalScore(a));
 
     return (
         <div
@@ -107,16 +105,16 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, 
                             </tr>
                         </thead>
                         <tbody>
-                            {players.map((player) => (
+                            {sortedPlayers.map((player) => (
                                 <tr
                                     key={player}
                                     style={{
-                                        backgroundColor: player === leader ? '#c8e6c9' : 'white',
-                                        fontWeight: player === leader ? 'bold' : 'normal',
+                                        backgroundColor: sortedPlayers[0] === player ? '#c8e6c9' : 'white',
+                                        fontWeight: sortedPlayers[0] === player ? 'bold' : 'normal',
                                     }}
                                 >
                                     <td style={{ padding: '10px', border: '1px solid #ccc' }}>
-                                        {player} {player === leader && '🏆'}
+                                        {player} {sortedPlayers[0] === player && '🏆'}
                                     </td>
                                     {shotTypeOptions.map((shotType) => (
                                         <td
