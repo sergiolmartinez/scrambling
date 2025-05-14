@@ -1,10 +1,7 @@
 .home-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    height: 100vh; /* Full viewport height */
-    padding: 20px;
+    align-items: center; /* optional, keep if you want horizontal centering */
+    padding: 40px 0;
+    background: #f7f7fb;
     box-sizing: border-box;
 }
 
@@ -17,7 +14,8 @@ h1 {
 .player-inputs {
     width: 100%;
     max-width: 400px;
-    margin-bottom: auto; /* Push the inputs to the top */
+    margin: 0 auto;      /* Center horizontally */
+    display: block;      /* Ensure block context */
 }
 
 .player-input {
