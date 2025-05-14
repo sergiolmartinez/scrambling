@@ -16,7 +16,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, 
         'Approach',
         'Chip',
         'Putt',
-    ]; // Removed 'Water Hazard'
+    ]; // 'Water Hazard' and 'Gimme' are not included
 
     const calculateScores = () => {
         const scores: { [player: string]: { [shotType: string]: number } } = {};

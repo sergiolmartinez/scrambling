@@ -29,6 +29,7 @@ const Game: React.FC<GameProps> = ({
         'Approach',
         'Chip',
         'Putt',
+        'Gimme', // Added Gimme as a shot type option
         'Water Hazard',
     ];
 
