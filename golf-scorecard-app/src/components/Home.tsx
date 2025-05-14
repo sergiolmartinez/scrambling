@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
 import './Home.css';
 
+interface TeeInfo {
+    color: string;
+    par: number[];
+    yardage: number[];
+}
+
 interface CourseInfo {
     name: string;
-    par: number[];
+    tees: TeeInfo[];
 }
 
 interface HomeProps {
-    startGame: (playerNames: string[], courseInfo: CourseInfo | null) => void;
+    startGame: (playerNames: string[], courseInfo: { name: string; par: number[]; yardage: number[]; teeColor: string } | null) => void;
 }
 
 const Home: React.FC<HomeProps> = ({ startGame }) => {
@@ -15,6 +21,7 @@ const Home: React.FC<HomeProps> = ({ startGame }) => {
     const [courseQuery, setCourseQuery] = useState('');
     const [courseResults, setCourseResults] = useState<CourseInfo[]>([]);
     const [selectedCourse, setSelectedCourse] = useState<CourseInfo | null>(null);
+    const [selectedTeeIdx, setSelectedTeeIdx] = useState<number>(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -33,6 +40,7 @@ const Home: React.FC<HomeProps> = ({ startGame }) => {
         setError(null);
         setCourseResults([]);
         setSelectedCourse(null);
+        setSelectedTeeIdx(0);
 
         try {
             const response = await fetch(
@@ -47,10 +55,17 @@ const Home: React.FC<HomeProps> = ({ startGame }) => {
             const data = await response.json();
 
             // Map API response to CourseInfo[]
-            const courses: CourseInfo[] = (data.courses || []).map((course: any) => ({
-                name: course.course_name || course.club_name || 'Unknown Course',
-                par: course.tees?.male?.[0]?.holes?.map((hole: any) => hole.par) || [],
-            }));
+            const courses: CourseInfo[] = (data.courses || []).map((course: any) => {
+                console.log('Tee sample:', course.tees?.male);
+                return {
+                    name: course.course_name || course.club_name || 'Unknown Course',
+                    tees: (course.tees?.male || []).map((tee: any) => ({
+                        color: tee.tee_name || tee.name || tee.color_type || tee.tee_type || tee.color || 'Unknown',
+                        par: tee.holes?.map((hole: any) => hole.par) || [],
+                        yardage: tee.holes?.map((hole: any) => hole.yardage) || [],
+                    })),
+                };
+            });
 
             setCourseResults(courses);
         } catch (err) {
@@ -62,7 +77,23 @@ const Home: React.FC<HomeProps> = ({ startGame }) => {
 
     const handleStartGame = () => {
         const filteredNames = playerNames.filter((name) => name.trim() !== '');
-        startGame(filteredNames, selectedCourse);
+        if (selectedCourse && selectedCourse.tees[selectedTeeIdx]) {
+            const tee = selectedCourse.tees[selectedTeeIdx];
+            startGame(filteredNames, {
+                name: selectedCourse.name,
+                par: tee.par,
+                yardage: tee.yardage,
+                teeColor: tee.color,
+            });
+        } else {
+            startGame(filteredNames, null);
+        }
+    };
+
+    // When a new course is selected, reset tee selection to first tee
+    const handleSelectCourse = (course: CourseInfo) => {
+        setSelectedCourse(course);
+        setSelectedTeeIdx(0);
     };
 
     return (
@@ -106,7 +137,7 @@ const Home: React.FC<HomeProps> = ({ startGame }) => {
                             <li
                                 key={idx}
                                 className={selectedCourse?.name === course.name ? 'selected' : ''}
-                                onClick={() => setSelectedCourse(course)}
+                                onClick={() => handleSelectCourse(course)}
                                 style={{
                                     cursor: 'pointer',
                                     fontWeight: selectedCourse?.name === course.name ? 'bold' : 'normal',
@@ -118,13 +149,30 @@ const Home: React.FC<HomeProps> = ({ startGame }) => {
                         ))}
                     </ul>
                 )}
-                {selectedCourse && (
+                {selectedCourse && selectedCourse.tees.length > 0 && (
                     <div style={{ marginTop: 16 }}>
                         <div style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 8 }}>
                             Selected Course: {selectedCourse.name}
                         </div>
+                        <div style={{ marginBottom: 8 }}>
+                            <label htmlFor="tee-select" style={{ fontWeight: 'bold', marginRight: 8 }}>Tee:</label>
+                            <select
+                                id="tee-select"
+                                value={selectedTeeIdx}
+                                onChange={e => setSelectedTeeIdx(Number(e.target.value))}
+                            >
+                                {selectedCourse.tees.map((tee, idx) => (
+                                    <option key={tee.color + idx} value={idx}>
+                                        {tee.color}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         <div>
-                            Par for each hole: {selectedCourse.par.join(', ')}
+                            Par for each hole: {selectedCourse.tees[selectedTeeIdx].par.join(', ')}
+                        </div>
+                        <div>
+                            Yardage for each hole: {selectedCourse.tees[selectedTeeIdx].yardage.join(', ')}
                         </div>
                     </div>
                 )}
