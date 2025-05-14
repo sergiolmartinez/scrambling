@@ -33,6 +33,17 @@ const Game: React.FC<GameProps> = ({
         'Water Hazard',
     ];
 
+    // Calculate the cumulative strokes across all holes
+    const totalStrokes = shotTypes.reduce((total, hole) => {
+        return (
+            total +
+            hole.reduce((holeTotal, stroke) => {
+                // Count only strokes where a shot type is selected
+                return holeTotal + (stroke[0] ? 1 : 0);
+            }, 0)
+        );
+    }, 0);
+
     const addStroke = () => {
         const updatedStrokes = [...strokes];
         const updatedShotTypes = [...shotTypes];
@@ -87,8 +98,13 @@ const Game: React.FC<GameProps> = ({
         const updatedShotTypes = [...shotTypes];
         const currentPlayers = strokes[currentHole - 1][strokeIndex] || [];
 
-        // Assign the shot type to each selected player for this stroke
-        updatedShotTypes[currentHole - 1][strokeIndex] = currentPlayers.map(() => shotType);
+        if (shotType === 'Gimme' || shotType === 'Water Hazard') {
+            // Allow "Gimme" and "Water Hazard" to be selected without players
+            updatedShotTypes[currentHole - 1][strokeIndex] = [shotType];
+        } else {
+            // Assign the shot type to each selected player for this stroke
+            updatedShotTypes[currentHole - 1][strokeIndex] = currentPlayers.map(() => shotType);
+        }
 
         setShotTypes(updatedShotTypes);
     };
@@ -117,7 +133,9 @@ const Game: React.FC<GameProps> = ({
 
     return (
         <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-            <h1 style={{ textAlign: 'center', marginBottom: '20px' }}>Hole {currentHole}</h1>
+            <h1 style={{ textAlign: 'center', marginBottom: '20px' }}>
+                Hole {currentHole} - Total Strokes: {totalStrokes}
+            </h1>
             <div style={{ overflowX: 'auto', marginBottom: '20px' }}>
                 <table
                     style={{
