@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import Hole from './Hole';
+import html2canvas from 'html2canvas';
 
 interface GameProps {
     players: string[];
@@ -9,6 +11,11 @@ interface GameProps {
     currentHole: number;
     setCurrentHole: React.Dispatch<React.SetStateAction<number>>;
     goToLeaderboard: () => void;
+    courseInfo: {
+        name: string;
+        par: number[];
+        yardage: number[];
+    };
 }
 
 const Game: React.FC<GameProps> = ({
@@ -20,6 +27,7 @@ const Game: React.FC<GameProps> = ({
     currentHole,
     setCurrentHole,
     goToLeaderboard,
+    courseInfo,
 }) => {
     const shotTypeOptions = [
         'Drive',
@@ -29,7 +37,7 @@ const Game: React.FC<GameProps> = ({
         'Approach',
         'Chip',
         'Putt',
-        'Gimme', // Added Gimme as a shot type option
+        'Gimme',
         'Water Hazard',
     ];
 
@@ -38,7 +46,6 @@ const Game: React.FC<GameProps> = ({
         return (
             total +
             hole.reduce((holeTotal, stroke) => {
-                // Count only strokes where a shot type is selected
                 return holeTotal + (stroke[0] ? 1 : 0);
             }, 0)
         );
@@ -55,8 +62,8 @@ const Game: React.FC<GameProps> = ({
             updatedShotTypes[currentHole - 1] = [];
         }
 
-        updatedStrokes[currentHole - 1].push([]); // Add a new stroke for the current hole
-        updatedShotTypes[currentHole - 1].push([]); // Add a new shot type for the current hole
+        updatedStrokes[currentHole - 1].push([]);
+        updatedShotTypes[currentHole - 1].push([]);
 
         setStrokes(updatedStrokes);
         setShotTypes(updatedShotTypes);
@@ -67,10 +74,10 @@ const Game: React.FC<GameProps> = ({
         const updatedShotTypes = [...shotTypes];
 
         if (updatedStrokes[currentHole - 1]) {
-            updatedStrokes[currentHole - 1].splice(strokeIndex, 1); // Remove the stroke
+            updatedStrokes[currentHole - 1].splice(strokeIndex, 1);
         }
         if (updatedShotTypes[currentHole - 1]) {
-            updatedShotTypes[currentHole - 1].splice(strokeIndex, 1); // Remove the shot type
+            updatedShotTypes[currentHole - 1].splice(strokeIndex, 1);
         }
 
         setStrokes(updatedStrokes);
@@ -82,12 +89,10 @@ const Game: React.FC<GameProps> = ({
         const currentStrokePlayers = updatedStrokes[currentHole - 1][strokeIndex] || [];
 
         if (currentStrokePlayers.includes(playerName)) {
-            // Remove the player if already selected
             updatedStrokes[currentHole - 1][strokeIndex] = currentStrokePlayers.filter(
                 (name) => name !== playerName
             );
         } else {
-            // Add the player if not already selected
             updatedStrokes[currentHole - 1][strokeIndex] = [...currentStrokePlayers, playerName];
         }
 
@@ -99,10 +104,8 @@ const Game: React.FC<GameProps> = ({
         const currentPlayers = strokes[currentHole - 1][strokeIndex] || [];
 
         if (shotType === 'Gimme' || shotType === 'Water Hazard') {
-            // Allow "Gimme" and "Water Hazard" to be selected without players
             updatedShotTypes[currentHole - 1][strokeIndex] = [shotType];
         } else {
-            // Assign the shot type to each selected player for this stroke
             updatedShotTypes[currentHole - 1][strokeIndex] = currentPlayers.map(() => shotType);
         }
 
@@ -113,7 +116,6 @@ const Game: React.FC<GameProps> = ({
         if (currentHole < 18) {
             setCurrentHole(currentHole + 1);
 
-            // Initialize strokes and shot types for the next hole if not already present
             if (!strokes[currentHole]) {
                 setStrokes([...strokes, []]);
             }
@@ -131,11 +133,131 @@ const Game: React.FC<GameProps> = ({
         }
     };
 
+    // Editable par state and edit mode
+    const [editablePar, setEditablePar] = useState<number>(courseInfo.par[currentHole - 1]);
+    const [editingPar, setEditingPar] = useState<boolean>(false);
+
+    React.useEffect(() => {
+        setEditablePar(courseInfo.par[currentHole - 1]);
+        setEditingPar(false);
+    }, [currentHole, courseInfo.par]);
+
+    const handleParChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newPar = Number(e.target.value);
+        setEditablePar(newPar);
+    };
+
+    const savePar = () => {
+        const updatedPar = [...courseInfo.par];
+        updatedPar[currentHole - 1] = editablePar;
+        courseInfo.par = updatedPar;
+        setEditingPar(false);
+    };
+
+    const exportLeaderboardToDiscord = async () => {
+        const leaderboardElement = document.querySelector('.leaderboard-container');
+        if (!leaderboardElement) {
+            alert('Leaderboard not found!');
+            return;
+        }
+        const canvas = await html2canvas(leaderboardElement as HTMLElement);
+        const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) {
+            alert('Failed to generate image.');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('file', blob, 'leaderboard.png');
+        formData.append('payload_json', JSON.stringify({ content: 'Leaderboard export' }));
+
+        await fetch('https://discord.com/api/webhooks/1398045992598896650/dKOIWVmXNLTmdIW6IjIEblhOYKeTBPxQUOJEy8rZbCBg-6aXGHMvyIqzb7ac8re2rvuJ', {
+            method: 'POST',
+            body: formData,
+        });
+        alert('Leaderboard exported to Discord!');
+    };
+
     return (
         <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-            <h1 style={{ textAlign: 'center', marginBottom: '20px' }}>
-                Hole {currentHole} - Total Strokes: {totalStrokes}
-            </h1>
+            <h1 style={{ textAlign: 'center', color: '#2380d7', marginBottom: 0 }}>{courseInfo.name}</h1>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 32, marginBottom: 24 }}>
+                <div
+                    style={{
+                        padding: '18px 5vw',
+                        background: '#e3f2fd',
+                        borderRadius: '12px',
+                        fontSize: 'clamp(1.2rem, 6vw, 2rem)',
+                        color: '#1976d2',
+                        fontWeight: 'bold',
+                        boxShadow: '0 2px 8px rgba(25, 118, 210, 0.08)',
+                        textAlign: 'center',
+                        minWidth: 120,
+                        marginBottom: 16,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '1vw',
+                        maxWidth: '95vw',
+                    }}
+                >
+                    Hole {currentHole} &nbsp;|&nbsp; Par{' '}
+                    {editingPar ? (
+                        <input
+                            type="number"
+                            value={editablePar}
+                            min={1}
+                            max={10}
+                            autoFocus
+                            onChange={handleParChange}
+                            onBlur={savePar}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') savePar();
+                            }}
+                            style={{
+                                width: '3em',
+                                fontSize: 'clamp(1rem, 5vw, 1.5rem)',
+                                textAlign: 'center',
+                                border: '1px solid #1976d2',
+                                borderRadius: '6px',
+                                marginLeft: 8,
+                                background: '#e3f2fd',
+                                color: '#1976d2',
+                                fontWeight: 'bold'
+                            }}
+                        />
+                    ) : (
+                        <span
+                            style={{
+                                marginLeft: 8,
+                                cursor: 'pointer',
+                                color: '#1976d2',
+                                textDecoration: 'underline',
+                                fontWeight: 'bold'
+                            }}
+                            title="Click to edit par"
+                            onClick={() => setEditingPar(true)}
+                        >
+                            {editablePar}
+                        </span>
+                    )}
+                </div>
+                <div
+                    style={{
+                        background: '#fffde7',
+                        borderRadius: '12px',
+                        padding: '10px 24px',
+                        color: '#f9a825',
+                        fontWeight: 'bold',
+                        fontSize: '1rem',
+                        boxShadow: '0 2px 8px rgba(249, 168, 37, 0.08)',
+                        minWidth: 120,
+                        textAlign: 'center'
+                    }}
+                >
+                    Total Strokes: {totalStrokes}
+                </div>
+            </div>
             <div style={{ overflowX: 'auto', marginBottom: '20px' }}>
                 <table
                     style={{

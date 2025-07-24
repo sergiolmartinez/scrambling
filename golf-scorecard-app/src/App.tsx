@@ -7,14 +7,16 @@ import './App.css';
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<'home' | 'game' | 'leaderboard'>('home');
     const [players, setPlayers] = useState<string[]>([]);
-    const [strokes, setStrokes] = useState<string[][][]>([]); // 3D array for strokes
-    const [shotTypes, setShotTypes] = useState<string[][][]>([]); // 3D array for shot types
-    const [currentHole, setCurrentHole] = useState(1); // Tracks the current hole
+    const [strokes, setStrokes] = useState<string[][][]>([]);
+    const [shotTypes, setShotTypes] = useState<string[][][]>([]);
+    const [currentHole, setCurrentHole] = useState(1);
+    const [courseInfo, setCourseInfo] = useState<{ name: string; par: number[]; yardage: number[]; teeColor: string } | null>(null);
 
-    const startGame = (playerNames: string[]) => {
+    // Update startGame to accept courseInfo
+    const startGame = (playerNames: string[], selectedCourseInfo: { name: string; par: number[]; yardage: number[]; teeColor: string } | null) => {
         setPlayers(playerNames);
+        setCourseInfo(selectedCourseInfo);
 
-        // Initialize strokes and shotTypes arrays for 18 holes, players, and strokes per hole
         const initialStrokes = Array.from({ length: 18 }, () =>
             Array.from({ length: playerNames.length }, () => [])
         );
@@ -24,14 +26,14 @@ const App: React.FC = () => {
 
         setStrokes(initialStrokes);
         setShotTypes(initialShotTypes);
-        setCurrentHole(1); // Start at hole 1
+        setCurrentHole(1);
         setCurrentPage('game');
     };
 
     return (
         <div className="App">
             {currentPage === 'home' && <Home startGame={startGame} />}
-            {currentPage === 'game' && (
+            {currentPage === 'game' && courseInfo && (
                 <Game
                     players={players}
                     strokes={strokes}
@@ -41,6 +43,7 @@ const App: React.FC = () => {
                     currentHole={currentHole}
                     setCurrentHole={setCurrentHole}
                     goToLeaderboard={() => setCurrentPage('leaderboard')}
+                    courseInfo={courseInfo}
                 />
             )}
             {currentPage === 'leaderboard' && (

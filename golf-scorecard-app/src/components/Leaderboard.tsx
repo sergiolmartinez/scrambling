@@ -1,4 +1,5 @@
 import React from 'react';
+import html2canvas from 'html2canvas';
 
 interface LeaderboardProps {
     players: string[];
@@ -52,23 +53,49 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, 
     // Sort players by total score in descending order
     const sortedPlayers = [...players].sort((a, b) => getTotalScore(b) - getTotalScore(a));
 
+    const exportLeaderboardToDiscord = async () => {
+        // Select only the leaderboard frame (the white card)
+        const leaderboardFrame = document.querySelector('.leaderboard-frame');
+        if (!leaderboardFrame) {
+            alert('Leaderboard frame not found!');
+            return;
+        }
+        const canvas = await html2canvas(leaderboardFrame as HTMLElement);
+        const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) {
+            alert('Failed to generate image.');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('file', blob, 'leaderboard.png');
+        formData.append('payload_json', JSON.stringify({ content: 'Leaderboard export' }));
+
+        await fetch('https://discord.com/api/webhooks/1398050403047706754/ftLQITsaRvbvNb4jIB70RnpqYR6wZJ9NSZqBq0c7tFSe3XdQG7m4a9_jX4a4JyJSDgFQ', {
+            method: 'POST',
+            body: formData,
+        });
+        alert('Leaderboard exported to Discord!');
+    };
+
     return (
         <div
+            className="leaderboard-container"
             style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: '20px',
-                minHeight: '100vh', // Center vertically
-                backgroundColor: '#e8f5e9', // Shaded green background
+                minHeight: '100vh',
+                backgroundColor: '#e8f5e9',
             }}
         >
             <div
+                className="leaderboard-frame"
                 style={{
                     width: '100%',
-                    maxWidth: '1200px', // Center the content within a max width
-                    backgroundColor: '#ffffff', // White background for the table
+                    maxWidth: '1200px',
+                    backgroundColor: '#ffffff',
                     borderRadius: '10px',
                     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                     padding: '20px',
@@ -139,24 +166,35 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, strokes, shotTypes, 
                         </tbody>
                     </table>
                 </div>
-                <button
-                    onClick={goToGame}
-                    style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#388e3c',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        fontSize: '16px',
-                        cursor: 'pointer',
-                        marginTop: '20px',
-                        display: 'block',
-                        marginLeft: 'auto',
-                        marginRight: 'auto',
-                    }}
-                >
-                    Back to Game
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: 24 }}>
+                    <button
+                        onClick={exportLeaderboardToDiscord}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#5865F2',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        Export to Discord
+                    </button>
+                    <button
+                        onClick={goToGame}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#388e3c',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '5px',
+                            fontSize: '16px',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        Back to Game
+                    </button>
+                </div>
             </div>
         </div>
     );
