@@ -182,14 +182,10 @@ const Game: React.FC<GameProps> = ({
       JSON.stringify({ content: "Leaderboard export" })
     );
 
-    await fetch(
-      "https://discord.com/api/webhooks/1398542546937970820/JrxGs9x1IcVj55zTvuUisJi1FvcLUwPLbPwKvneJr7PLcm-LIve3fRtut5kRUgDOOf9J",
-      {
-        // await fetch('https://discord.com/api/webhooks/1398045992598896650/dKOIWVmXNLTmdIW6IjIEblhOYKeTBPxQUOJEy8rZbCBg-6aXGHMvyIqzb7ac8re2rvuJ', {
-        method: "POST",
-        body: formData,
-      }
-    );
+    await fetch(process.env.REACT_APP_DISCORD_WEBHOOK_URL || "", {
+      method: "POST",
+      body: formData,
+    });
     alert("Leaderboard exported to Discord!");
   };
 

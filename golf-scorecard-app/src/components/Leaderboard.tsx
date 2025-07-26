@@ -86,9 +86,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     );
 
     await fetch(
-      "https://discord.com/api/webhooks/1398542546937970820/JrxGs9x1IcVj55zTvuUisJi1FvcLUwPLbPwKvneJr7PLcm-LIve3fRtut5kRUgDOOf9J",
+      process.env.REACT_APP_DISCORD_WEBHOOK_URL || "", // Use the environment variable for the Discord webhook URL
       {
-        // await fetch('https://discord.com/api/webhooks/1398050403047706754/ftLQITsaRvbvNb4jIB70RnpqYR6wZJ9NSZqBq0c7tFSe3XdQG7m4a9_jX4a4JyJSDgFQ', {
         method: "POST",
         body: formData,
       }
