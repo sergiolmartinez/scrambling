@@ -1,2 +1,50 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build artifacts
+build/
+dist/
+.tsbuildinfo # TypeScript build info file
+*.js.map     # JavaScript source maps
+*.d.ts       # TypeScript declaration files (if generated in a separate output directory and not intended for version control)
+
+# IDE and OS specific files
+.idea/      # JetBrains IDEs
+.vscode/    # VS Code
+.vs/        # Visual Studio
+.DS_Store   # macOS
+Thumbs.db   # Windows
+*.swp       # Vim swap files
+
+# Environment variables
 .env
-**/node_modules/*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Test coverage
+coverage/
+
+# npm cache
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Next.js specific (if using Next.js)
+.next/
