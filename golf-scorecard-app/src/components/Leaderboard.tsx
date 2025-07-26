@@ -1,11 +1,14 @@
-import React from "react";
-import html2canvas from "html2canvas";
+import React, { useState } from "react";
+import { Player } from "../types";
+import { getAllPlayerScores, getHoleAverages } from "../utils/calculateScore";
+import { notifyDiscord } from "../utils/notifyDiscord";
 
-interface LeaderboardProps {
-  players: string[];
-  strokes: string[][][]; // Tracks selected players for each stroke
-  shotTypes: string[][][]; // Tracks shot types for each stroke
+export interface LeaderboardProps {
+  players: Player[];
+  strokes: string[][][];
+  shotTypes: string[][][];
   goToGame: () => void;
+  onNewGame?: () => void;
 }
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
@@ -13,233 +16,69 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   strokes,
   shotTypes,
   goToGame,
+  onNewGame,
 }) => {
-  const shotTypeOptions = [
-    "Drive",
-    "Par 3",
-    "Hybrid",
-    "Iron",
-    "Approach",
-    "Chip",
-    "Putt",
-  ]; // 'Water Hazard' and 'Gimme' are not included
+  const [shared, setShared] = useState(false);
 
-  const calculateScores = () => {
-    const scores: { [player: string]: { [shotType: string]: number } } = {};
+  const handleShare = async () => {
+    const summary = players
+      .map((p) => `${p.name}: ${p.scores.reduce((a, b) => a + b, 0)} strokes`)
+      .join("\n");
 
-    // Initialize scores for each player and shot type
-    players.forEach((player) => {
-      scores[player] = {};
-      shotTypeOptions.forEach((shotType) => {
-        scores[player][shotType] = 0;
-      });
-    });
-
-    // Iterate over strokes and shotTypes to calculate scores
-    strokes.forEach((hole, holeIndex) => {
-      hole.forEach((strokePlayers, strokeIndex) => {
-        strokePlayers.forEach((player) => {
-          const shotType = shotTypes[holeIndex]?.[strokeIndex]?.[0]; // Get the shot type for this stroke
-          if (player && shotType && shotTypeOptions.includes(shotType)) {
-            scores[player][shotType] += 1; // Increment the score for the player and shot type
-          }
-        });
-      });
-    });
-
-    return scores;
-  };
-
-  const scores = calculateScores();
-
-  const getTotalScore = (player: string) =>
-    shotTypeOptions.reduce(
-      (total, shotType) => total + scores[player][shotType],
-      0
-    );
-
-  // Sort players by total score in descending order
-  const sortedPlayers = [...players].sort(
-    (a, b) => getTotalScore(b) - getTotalScore(a)
-  );
-
-  const exportLeaderboardToDiscord = async () => {
-    // Select only the leaderboard frame (the white card)
-    const leaderboardFrame = document.querySelector(".leaderboard-frame");
-    if (!leaderboardFrame) {
-      alert("Leaderboard frame not found!");
-      return;
-    }
-    const canvas = await html2canvas(leaderboardFrame as HTMLElement);
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/png")
-    );
-    if (!blob) {
-      alert("Failed to generate image.");
-      return;
-    }
-    const formData = new FormData();
-    formData.append("file", blob, "leaderboard.png");
-    formData.append(
-      "payload_json",
-      JSON.stringify({ content: "Leaderboard export" })
-    );
-
-    await fetch(
-      process.env.REACT_APP_DISCORD_WEBHOOK_URL || "", // Use the environment variable for the Discord webhook URL
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
-    alert("Leaderboard exported to Discord!");
+    await notifyDiscord(`🏌 Leaderboard Results:\n\n${summary}`);
+    setShared(true);
+    setTimeout(() => setShared(false), 3000);
   };
 
   return (
-    <div
-      className="leaderboard-container"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-        minHeight: "100vh",
-        backgroundColor: "#e8f5e9",
-      }}
-    >
-      <div
-        className="leaderboard-frame"
-        style={{
-          width: "100%",
-          maxWidth: "1200px",
-          backgroundColor: "#ffffff",
-          borderRadius: "10px",
-          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-          padding: "20px",
-        }}
-      >
-        <h1
-          style={{
-            textAlign: "center",
-            color: "#388e3c",
-            fontSize: "2.5rem",
-            marginBottom: "20px",
-          }}
+    <div className="leaderboard px-4 py-6 max-w-md mx-auto">
+      <h2 className="text-center text-xl font-semibold mb-4">
+        🏆 Final Scores
+      </h2>
+      <ul className="space-y-2">
+        {players.map((player, idx) => (
+          <li key={idx} className="flex justify-between border-b pb-1">
+            <span>{player.name}</span>
+            <span>{player.scores.reduce((a, b) => a + b, 0)} strokes</span>
+          </li>
+        ))}
+      </ul>
+
+      <h3 className="mt-6 mb-2 font-medium">Hole Averages</h3>
+      <ol className="list-decimal pl-5">
+        {getHoleAverages(players).map((avg, idx) => (
+          <li key={idx}>
+            Hole {idx + 1}: {avg.toFixed(2)} avg
+          </li>
+        ))}
+      </ol>
+
+      <div className="flex flex-col sm:flex-row justify-between gap-2 mt-6">
+        <button
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+          onClick={handleShare}
         >
-          🏌️‍♂️ Leaderboard ⛳
-        </h1>
-        <div
-          className="table-container"
-          style={{
-            overflowX: "auto",
-            WebkitOverflowScrolling: "touch",
-            marginBottom: "20px",
-          }}
-        >
-          <table
-            style={{
-              minWidth: "600px",
-              borderCollapse: "collapse",
-              width: "100%",
-              backgroundColor: "#ffffff",
-            }}
-          >
-            <thead>
-              <tr style={{ backgroundColor: "#388e3c", color: "white" }}>
-                <th style={{ padding: "10px", border: "1px solid #ccc" }}>
-                  Player
-                </th>
-                {shotTypeOptions.map((shotType) => (
-                  <th
-                    key={shotType}
-                    style={{ padding: "10px", border: "1px solid #ccc" }}
-                  >
-                    {shotType}
-                  </th>
-                ))}
-                <th style={{ padding: "10px", border: "1px solid #ccc" }}>
-                  Total
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedPlayers.map((player) => (
-                <tr
-                  key={player}
-                  style={{
-                    backgroundColor:
-                      sortedPlayers[0] === player ? "#c8e6c9" : "white",
-                    fontWeight: sortedPlayers[0] === player ? "bold" : "normal",
-                  }}
-                >
-                  <td style={{ padding: "10px", border: "1px solid #ccc" }}>
-                    {player} {sortedPlayers[0] === player && "🏆"}
-                  </td>
-                  {shotTypeOptions.map((shotType) => (
-                    <td
-                      key={shotType}
-                      style={{
-                        padding: "10px",
-                        border: "1px solid #ccc",
-                        textAlign: "center",
-                      }}
-                    >
-                      {scores[player][shotType]}
-                    </td>
-                  ))}
-                  <td
-                    style={{
-                      padding: "10px",
-                      border: "1px solid #ccc",
-                      textAlign: "center",
-                      backgroundColor: "#f1f8e9",
-                    }}
-                  >
-                    {getTotalScore(player)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: "20px",
-            marginTop: 24,
-          }}
-        >
+          📤 Share to Discord
+        </button>
+        {onNewGame && (
           <button
-            onClick={exportLeaderboardToDiscord}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: "#5865F2",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
+            className="bg-green-500 text-white px-4 py-2 rounded"
+            onClick={onNewGame}
           >
-            Export to Discord
+            🔄 Start New Game
           </button>
-          <button
-            onClick={goToGame}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: "#388e3c",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              fontSize: "16px",
-              cursor: "pointer",
-            }}
-          >
-            Back to Game
-          </button>
-        </div>
+        )}
+        <button
+          className="bg-gray-300 text-black px-4 py-2 rounded"
+          onClick={goToGame}
+        >
+          🔙 Back to Game
+        </button>
       </div>
+
+      {shared && (
+        <div className="toast mt-4 text-green-600">✅ Shared to Discord!</div>
+      )}
     </div>
   );
 };

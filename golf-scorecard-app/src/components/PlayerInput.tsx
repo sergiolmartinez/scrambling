@@ -1,37 +1,30 @@
-import React, { useState } from 'react';
+import React from "react";
+import { usePlayerInput } from "../hooks/usePlayerInput";
 
 interface PlayerInputProps {
-    addPlayer: (name: string, score: number) => void;
+  onAddPlayer: (name: string) => void;
+  onStartGame: () => void;
 }
 
-const PlayerInput: React.FC<PlayerInputProps> = ({ addPlayer }) => {
-    const [name, setName] = useState('');
-    const [score, setScore] = useState(0);
+const PlayerInput: React.FC<PlayerInputProps> = ({
+  onAddPlayer,
+  onStartGame,
+}) => {
+  const { playerName, setPlayerName, handleAddPlayer } =
+    usePlayerInput(onAddPlayer);
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        addPlayer(name, score);
-        setName('');
-        setScore(0);
-    };
-
-    return (
-        <form onSubmit={handleSubmit}>
-            <input
-                type="text"
-                placeholder="Player Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-            />
-            <input
-                type="number"
-                placeholder="Score"
-                value={score}
-                onChange={(e) => setScore(Number(e.target.value))}
-            />
-            <button type="submit">Add Player</button>
-        </form>
-    );
+  return (
+    <div className="player-input">
+      <input
+        type="text"
+        placeholder="Enter player name"
+        value={playerName}
+        onChange={(e) => setPlayerName(e.target.value)}
+      />
+      <button onClick={handleAddPlayer}>Add Player</button>
+      <button onClick={onStartGame}>Start Game</button>
+    </div>
+  );
 };
 
 export default PlayerInput;

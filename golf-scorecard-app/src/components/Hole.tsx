@@ -1,67 +1,60 @@
-import React from 'react';
+import React, { useEffect, useState } from "react";
 
 interface HoleProps {
-    holeNumber: number; // Current hole number (1-based index)
-    courseInfo: {
-        name: string;
-        par: number[];
-        yardage: number[];
-    };
-    totalStrokes?: number; // Optional, if you want to pass total strokes
+  number: number;
 }
 
-const Hole: React.FC<HoleProps> = ({ holeNumber, courseInfo, totalStrokes }) => {
-    const parForHole = courseInfo.par[holeNumber - 1]; // Get the par for the current hole
+interface HoleData {
+  par: number;
+  yardage: number;
+  handicap?: number;
+}
 
-    return (
-        <div className="hole-container">
-            <h1 style={{ textAlign: 'center', color: '#2380d7', marginBottom: 0 }}>{courseInfo.name}</h1>
-            {/* Cohesive hole and par info */}
-            <div
-                style={{
-                    margin: '32px auto 0 auto',
-                    padding: '18px 40px',
-                    background: '#e3f2fd',
-                    borderRadius: '12px',
-                    display: 'inline-block',
-                    fontSize: '2rem',
-                    color: '#1976d2',
-                    fontWeight: 'bold',
-                    boxShadow: '0 2px 8px rgba(25, 118, 210, 0.08)',
-                    textAlign: 'center'
-                }}
-            >
-                Hole {holeNumber} &nbsp;|&nbsp; Par {parForHole}
-            </div>
-            {/* Total strokes info aligned right */}
-            {typeof totalStrokes === 'number' && (
-                <div
-                    style={{
-                        marginTop: 24,
-                        display: 'flex',
-                        justifyContent: 'flex-end'
-                    }}
-                >
-                    <div
-                        style={{
-                            background: '#fffde7',
-                            borderRadius: '12px',
-                            padding: '18px 32px',
-                            color: '#f9a825',
-                            fontWeight: 'bold',
-                            fontSize: '1.5rem',
-                            boxShadow: '0 2px 8px rgba(249, 168, 37, 0.08)',
-                            minWidth: 180,
-                            textAlign: 'center'
-                        }}
-                    >
-                        Total Strokes: {totalStrokes}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+const HoleInfoCard: React.FC<HoleProps> = ({ number }) => {
+  const [holeData, setHoleData] = useState<HoleData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchHoleData = async () => {
+      try {
+        const apiKey = process.env.REACT_APP_GOLF_API_KEY;
+        const response = await fetch(
+          `https://golf-leaderboard-api.com/api/holes/${number}`,
+          {
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+            },
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to fetch hole data");
+
+        const data = await response.json();
+        setHoleData(data);
+      } catch (err) {
+        setError("Unable to load hole information.");
+      }
+    };
+
+    fetchHoleData();
+  }, [number]);
+
+  if (error) return <div className="hole-info-error">{error}</div>;
+  if (!holeData)
+    return <div className="hole-info-loading">Loading hole info...</div>;
+
+  return (
+    <div className="hole-info">
+      <h4>Hole {number}</h4>
+      <ul>
+        <li>Par: {holeData.par}</li>
+        <li>Yardage: {holeData.yardage} yds</li>
+        {holeData.handicap !== undefined && (
+          <li>Handicap: {holeData.handicap}</li>
+        )}
+      </ul>
+    </div>
+  );
 };
 
-export default Hole;
-// filepath: c:\Users\cball\Desktop\scrambling\golf-scorecard-app\src\components\Hole.tsx
+export default HoleInfoCard;
