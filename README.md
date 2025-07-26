@@ -20,11 +20,13 @@ To get a local copy up and running, follow these steps:
 ### Installation
 
 1. Clone the repository:
+
    ```
    git clone https://github.com/yourusername/golf-scorecard-app.git
    ```
 
 2. Navigate to the project directory:
+
    ```
    cd golf-scorecard-app
    ```
@@ -37,6 +39,7 @@ To get a local copy up and running, follow these steps:
 ### Running the Application
 
 To start the application, run:
+
 ```
 npm start
 ```
@@ -55,3 +58,17 @@ Contributions are welcome! Please feel free to submit a pull request or open an 
 ## License
 
 This project is licensed under the MIT License.
+
+---
+
+## 🔐 Environment Variables
+
+Create a `.env` file in the root of `golf-scorecard-app/` with the following variables:
+
+```env
+# This is your personal API key for the golf scorecard app.
+REACT_APP_GOLF_API_KEY=
+
+# Discord webhook used for score updates or alerts
+REACT_APP_DISCORD_WEBHOOK_URL=
+```
