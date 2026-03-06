@@ -55,6 +55,7 @@ npm run dev:web
 ### API
 
 ```bash
+alembic -c apps/api/alembic.ini upgrade head
 uvicorn app.main:app --reload --app-dir apps/api
 ```
 
@@ -68,6 +69,7 @@ npm run typecheck
 
 python -m ruff check apps/api
 python -m ruff format --check apps/api
+alembic -c apps/api/alembic.ini upgrade head
 python -m pytest apps/api/tests
 ```
 

@@ -18,6 +18,7 @@
 
 - `python -m ruff check apps/api`
 - `python -m ruff format --check apps/api`
+- `alembic -c apps/api/alembic.ini upgrade head`
 - `python -m pytest apps/api/tests`
 
 ### Frontend checks

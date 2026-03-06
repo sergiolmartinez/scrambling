@@ -6,6 +6,20 @@
 
 ## Endpoints for MVP
 
+## Implemented in Prompt 02 (Domain + Persistence)
+
+- `GET /health`
+- `POST /courses`
+- `POST /rounds`
+- `GET /rounds/{round_id}`
+- `POST /rounds/{round_id}/players`
+- `POST /rounds/{round_id}/course`
+- `PUT /rounds/{round_id}/holes/{hole_number}`
+- `POST /rounds/{round_id}/holes/{hole_number}/shots`
+- `POST /rounds/{round_id}/complete`
+
+Remaining endpoints in this document stay planned for follow-up prompts.
+
 ### Round lifecycle
 
 #### `POST /rounds`

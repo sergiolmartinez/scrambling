@@ -18,6 +18,7 @@
 ```env
 APP_ENV=development
 API_V1_PREFIX=/api/v1
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/scrambling
 CORS_ORIGINS=http://localhost:5173
 ```
 
@@ -32,7 +33,7 @@ VITE_API_BASE_URL=http://localhost:8000
 ### Install dependencies
 
 ```bash
-npm install
+npm run install:all
 python -m venv .venv
 . .venv/Scripts/Activate.ps1
 pip install -r apps/api/requirements.txt
@@ -41,6 +42,7 @@ pip install -r apps/api/requirements.txt
 ### Start API
 
 ```bash
+alembic -c apps/api/alembic.ini upgrade head
 uvicorn app.main:app --reload --app-dir apps/api
 ```
 
