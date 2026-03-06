@@ -6,34 +6,26 @@
 
 - unit tests for services and validation rules
 - integration tests for API routes and DB interactions
-- migration smoke tests when practical
 
 ### Frontend
 
 - unit tests for utility logic
 - component tests for key interactions
-- route-level tests for major flows
 
-## Minimum coverage areas
+## Foundation baseline in this phase
 
-### Backend critical rules
+### Backend checks
 
-- max 4 players per round
-- duplicate contribution prevention for same player/hole/shot
-- lock enforcement after completion
-- leaderboard calculation
-- round summary generation
-- hole score upsert behavior
+- `python -m ruff check apps/api`
+- `python -m ruff format --check apps/api`
+- `python -m pytest apps/api/tests`
 
-### Frontend critical flows
+### Frontend checks
 
-- create round
-- add players
-- select course
-- update hole score
-- add and remove contributions
-- complete round
-- summary view
+- `npm run lint --prefix apps/web`
+- `npm run test --prefix apps/web`
+- `npm run build --prefix apps/web`
+- `npm run typecheck --prefix apps/web`
 
 ## Manual verification expectations
 
@@ -42,19 +34,4 @@ Every milestone should update the verification checklist with:
 - positive path
 - empty state
 - validation failure
-- lock behavior
 - persistence across refresh
-
-## Recommended commands
-
-### API
-
-- `pytest`
-- `ruff check .`
-- `black --check .`
-
-### Web
-
-- `npm run lint`
-- `npm run test`
-- `npm run build`

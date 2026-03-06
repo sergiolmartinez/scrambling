@@ -1,0 +1,14 @@
+{
+  "name": "scrambling-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "install:all": "npm install --prefix packages/shared-types && npm install --prefix packages/api-client && npm install --prefix apps/web",
+    "dev:web": "npm run dev --prefix apps/web",
+    "build:web": "npm run build --prefix apps/web",
+    "lint": "npm run lint --prefix apps/web",
+    "test": "npm run test --prefix apps/web",
+    "typecheck": "npm run typecheck --prefix apps/web && npm run typecheck --prefix packages/shared-types && npm run typecheck --prefix packages/api-client",
+    "format:check": "npm run format:check --prefix apps/web"
+  }
+}

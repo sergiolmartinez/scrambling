@@ -5,7 +5,6 @@
 ### API
 
 - Python 3.12+
-- PostgreSQL 15+
 
 ### Web
 
@@ -18,33 +17,35 @@
 
 ```env
 APP_ENV=development
-DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/scrambling
+API_V1_PREFIX=/api/v1
 CORS_ORIGINS=http://localhost:5173
 ```
 
 ### `apps/web/.env`
 
 ```env
-VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
 ## Suggested first-run commands
 
-### API
+### Install dependencies
 
 ```bash
-cd apps/api
+npm install
 python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload
+. .venv/Scripts/Activate.ps1
+pip install -r apps/api/requirements.txt
 ```
 
-### Web
+### Start API
 
 ```bash
-cd apps/web
-npm install
-npm run dev
+uvicorn app.main:app --reload --app-dir apps/api
+```
+
+### Start web
+
+```bash
+npm run dev:web
 ```
