@@ -1,74 +1,84 @@
-# Golf Scorecard App
+# Scrambling Monorepo
 
-This is a simple golf scorecard application built with React and TypeScript. The app allows users to input player names and scores, and it displays the scores in a scorecard format.
+This repository contains the MVP foundation for the Scrambling app as a monorepo.
 
-## Features
+## Scope in this phase
 
-- Input player names and scores
-- Display scores in a structured scorecard
-- Calculate total scores and statistics
+- `apps/web`: React + TypeScript web shell (strict TypeScript)
+- `apps/api`: FastAPI scaffold
+- `packages/shared-types`: shared TypeScript domain and API types
+- `packages/api-client`: typed API client for the web app
 
-## Getting Started
+Legacy proof-of-concept code is intentionally retained as reference only:
 
-To get a local copy up and running, follow these steps:
+- `golf-scorecard-app/`
+- `backend/`
 
-### Prerequisites
+## Repository layout
 
-- Node.js (version 14 or later)
-- npm (Node package manager)
-
-### Installation
-
-1. Clone the repository:
-
-   ```
-   git clone https://github.com/yourusername/golf-scorecard-app.git
-   ```
-
-2. Navigate to the project directory:
-
-   ```
-   cd golf-scorecard-app
-   ```
-
-3. Install the dependencies:
-   ```
-   npm install
-   ```
-
-### Running the Application
-
-To start the application, run:
-
-```
-npm start
+```text
+apps/
+  api/
+  web/
+packages/
+  api-client/
+  shared-types/
+docs/
+  product/
+  architecture/
+  development/
 ```
 
-This will launch the app in your default web browser at `http://localhost:3000`.
+## Prerequisites
 
-## Usage
+- Node.js 20+
+- npm 7+ (npm 10+ recommended)
+- Python 3.12+
 
-- Enter player names and their scores in the input fields.
-- The scorecard will automatically update to reflect the entered scores.
+## Install
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a pull request or open an issue.
-
-## License
-
-This project is licensed under the MIT License.
-
----
-
-## 🔐 Environment Variables
-
-Create a `.env` file in the root of `golf-scorecard-app/` with the following variables:
-
-```env
-# This is your personal API key for the golf scorecard app.
-REACT_APP_GOLF_API_KEY=
-
-# Discord webhook used for score updates or alerts
-REACT_APP_DISCORD_WEBHOOK_URL=
+```bash
+npm run install:all
+python -m venv .venv
+. .venv/Scripts/Activate.ps1
+pip install -r apps/api/requirements.txt
 ```
+
+## Run
+
+### Web
+
+```bash
+npm run dev:web
+```
+
+### API
+
+```bash
+alembic -c apps/api/alembic.ini upgrade head
+uvicorn app.main:app --reload --app-dir apps/api
+```
+
+## Lint, format, and tests
+
+```bash
+npm run lint
+npm run format:check
+npm run test
+npm run typecheck
+
+python -m ruff check apps/api
+python -m ruff format --check apps/api
+alembic -c apps/api/alembic.ini upgrade head
+python -m pytest apps/api/tests
+```
+
+## CI
+
+A CI skeleton is available at `.github/workflows/ci.yml` and runs web + API checks on pushes and pull requests.
+
+## Release prep
+
+Use the MVP release checklist before cutting a release:
+
+- `docs/development/release-checklist.md`
