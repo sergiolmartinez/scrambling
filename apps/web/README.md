@@ -1,6 +1,15 @@
 # Web App (`apps/web`)
 
-React + Vite scaffold for the Scrambling MVP frontend.
+React + Vite web shell for the Scrambling MVP frontend.
+
+## Stack
+
+- React Router
+- TanStack Query
+- Zustand
+- Tailwind CSS
+- shadcn-style UI primitives (`src/components/ui`)
+- React Hook Form + Zod
 
 ## Commands
 
@@ -15,3 +24,10 @@ npm run typecheck --prefix apps/web
 ## Environment
 
 Create `apps/web/.env` from `.env.example`.
+
+## Implemented shell routes
+
+- `/setup`
+- `/scoring`
+- `/leaderboard`
+- `/summary`

@@ -2,8 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": ["vitest/globals", "@testing-library/jest-dom"],
-    "baseUrl": "."
+    "types": ["vitest/globals", "@testing-library/jest-dom", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src", "vite.config.ts", "vitest.setup.ts"]
 }

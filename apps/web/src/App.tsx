@@ -1,8 +1,11 @@
+import { AppProviders } from '@/app/providers';
+import { router } from '@/app/router';
+import { RouterProvider } from 'react-router-dom';
+
 export function App(): JSX.Element {
   return (
-    <main>
-      <h1>Scrambling MVP Foundation</h1>
-      <p>Web shell is scaffolded. Product features will be added in later prompts.</p>
-    </main>
+    <AppProviders>
+      <RouterProvider router={router} />
+    </AppProviders>
   );
 }

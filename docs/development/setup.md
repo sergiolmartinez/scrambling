@@ -51,3 +51,10 @@ uvicorn app.main:app --reload --app-dir apps/api
 ```bash
 npm run dev:web
 ```
+
+Web shell routes are available at:
+
+- `http://localhost:5173/setup`
+- `http://localhost:5173/scoring`
+- `http://localhost:5173/leaderboard`
+- `http://localhost:5173/summary`

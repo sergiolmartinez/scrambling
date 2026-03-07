@@ -28,6 +28,7 @@
 - `npm run test --prefix apps/web`
 - `npm run build --prefix apps/web`
 - `npm run typecheck --prefix apps/web`
+- route shell tests cover setup navigation and round creation shell behavior
 
 ## Manual verification expectations
 

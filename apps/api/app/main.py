@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.router import api_router
@@ -7,6 +8,16 @@ from app.schemas import ErrorResponse
 from app.services.errors import DomainError
 
 app = FastAPI(title="Scrambling API", version="0.2.0")
+
+allowed_origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.exception_handler(DomainError)
