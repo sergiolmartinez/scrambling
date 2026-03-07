@@ -1,6 +1,11 @@
-from app.models import RoundStatus
+from app.integrations.course_provider import (
+    NormalizedCourseDetail,
+    NormalizedCourseHole,
+    NormalizedCourseSummary,
+)
+from app.models import Course, RoundStatus
 from app.schemas import (
-    CourseCreate,
+    CourseImportRequest,
     HoleScoreUpsert,
     RoundCreate,
     RoundPlayerCreate,
@@ -8,6 +13,45 @@ from app.schemas import (
 )
 from app.services.errors import ConflictError, LockedRoundError, ValidationError
 from app.services.round_service import RoundService
+
+
+class StubProvider:
+    def __init__(self) -> None:
+        self.detail_calls = 0
+
+    def search_courses(self, query: str) -> list[NormalizedCourseSummary]:
+        return [
+            NormalizedCourseSummary(
+                external_id="991",
+                name="Pine Hills",
+                city="Denver",
+                state="CO",
+                country="USA",
+                total_holes=18,
+                source="golfcourseapi",
+            )
+        ]
+
+    def get_course_detail(self, external_id: str) -> NormalizedCourseDetail:
+        self.detail_calls += 1
+        return NormalizedCourseDetail(
+            external_id=external_id,
+            name="Pine Hills",
+            city="Denver",
+            state="CO",
+            country="USA",
+            total_holes=18,
+            source="golfcourseapi",
+            holes=[
+                NormalizedCourseHole(
+                    hole_number=1,
+                    par=4,
+                    yardage=410,
+                    handicap=8,
+                    tee_name="Blue",
+                )
+            ],
+        )
 
 
 def test_round_has_max_four_players(db_session) -> None:
@@ -89,17 +133,7 @@ def test_hole_score_upsert_updates_existing_record(db_session) -> None:
 
 
 def test_course_search_requires_minimum_query_length(db_session) -> None:
-    service = RoundService(db_session)
-    service.create_course(
-        CourseCreate(
-            name="Pebble Beach Golf Links",
-            city="Pebble Beach",
-            state="CA",
-            country="USA",
-            total_holes=18,
-            source="manual",
-        )
-    )
+    service = RoundService(db_session, course_provider=StubProvider())
 
     try:
         service.search_courses(" ")
@@ -111,18 +145,58 @@ def test_course_search_requires_minimum_query_length(db_session) -> None:
 
 
 def test_course_search_trims_whitespace(db_session) -> None:
-    service = RoundService(db_session)
-    service.create_course(
-        CourseCreate(
-            name="Augusta National",
-            city="Augusta",
-            state="GA",
-            country="USA",
-            total_holes=18,
-            source="manual",
-        )
-    )
+    service = RoundService(db_session, course_provider=StubProvider())
 
     results = service.search_courses("  Augusta  ")
     assert len(results) == 1
-    assert results[0].name == "Augusta National"
+    assert results[0].name == "Pine Hills"
+
+
+def test_import_course_snapshots_and_assigns_round(db_session) -> None:
+    provider = StubProvider()
+    service = RoundService(db_session, course_provider=provider)
+    round_obj = service.create_round(RoundCreate())
+    service.add_player(round_obj.id, RoundPlayerCreate(display_name="A", sort_order=1))
+
+    updated = service.import_course_and_assign_round(
+        round_obj.id, CourseImportRequest(external_id="991")
+    )
+    aggregate = service.get_round_aggregate(round_obj.id)
+    course_obj = db_session.get(Course, updated.course_id)
+
+    assert updated.course_id is not None
+    assert aggregate.course is not None
+    assert aggregate.course.source == "golfcourseapi"
+    assert aggregate.course.external_course_id == "991"
+    assert course_obj is not None
+    assert course_obj.imported_at is not None
+    assert course_obj.external_payload_hash is not None
+
+
+def test_external_course_detail_lazy_hydrates_missing_holes(db_session) -> None:
+    provider = StubProvider()
+    service = RoundService(db_session, course_provider=provider)
+
+    course = Course(
+        external_course_id="991",
+        name="Pine Hills",
+        city="Denver",
+        state="CO",
+        country="USA",
+        total_holes=18,
+        source="golfcourseapi",
+    )
+    db_session.add(course)
+    db_session.commit()
+
+    hydrated = service.get_course_detail(course.id)
+    assert hydrated.id == course.id
+    assert len(hydrated.holes) == 1
+    assert hydrated.holes[0].hole_number == 1
+    assert hydrated.holes[0].par == 4
+    assert hydrated.imported_at is not None
+    assert provider.detail_calls == 1
+
+    second = service.get_course_detail(course.id)
+    assert len(second.holes) == 1
+    assert provider.detail_calls == 1

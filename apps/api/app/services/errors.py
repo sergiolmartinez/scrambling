@@ -31,3 +31,8 @@ class ValidationError(DomainError):
 class ConflictError(DomainError):
     def __init__(self, message: str, details: dict[str, str] | None = None) -> None:
         super().__init__("conflict", message, status.HTTP_409_CONFLICT, details)
+
+
+class ExternalServiceError(DomainError):
+    def __init__(self, message: str, details: dict[str, str] | None = None) -> None:
+        super().__init__("external_service_error", message, status.HTTP_502_BAD_GATEWAY, details)

@@ -4,12 +4,20 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=(".env", "apps/api/.env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     app_env: str = "development"
     api_v1_prefix: str = "/api/v1"
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/scrambling"
     cors_origins: str = "http://localhost:5173"
+    golfcourseapi_base_url: str = "https://api.golfcourseapi.com"
+    golfcourseapi_api_key: str = ""
+    golfcourseapi_timeout_seconds: float = 10.0
+    golfcourseapi_cache_ttl_seconds: int = 300
 
     def cors_origin_list(self) -> list[str]:
         raw_value = self.cors_origins.strip()

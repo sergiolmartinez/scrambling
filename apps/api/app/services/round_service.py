@@ -1,13 +1,24 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import Select, func, or_, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Course, HoleScore, Round, RoundPlayer, RoundStatus, ShotContribution
+from app.integrations.course_provider import CourseProvider
+from app.models import (
+    Course,
+    HoleScore,
+    Round,
+    RoundPlayer,
+    RoundStatus,
+    ShotContribution,
+)
 from app.schemas import (
     CourseAssignRequest,
     CourseCreate,
+    CourseImportRequest,
+    ExternalCourseDetailRead,
+    ExternalCourseSearchRead,
     HoleScoreUpsert,
     LeaderboardEntryRead,
     RoundAggregateRead,
@@ -17,12 +28,21 @@ from app.schemas import (
     RoundSummaryRead,
     ShotContributionCreate,
 )
-from app.services.errors import ConflictError, LockedRoundError, NotFoundError, ValidationError
+from app.services.course_import_service import CourseImportService
+from app.services.errors import (
+    ConflictError,
+    LockedRoundError,
+    NotFoundError,
+    ValidationError,
+)
 
 
 class RoundService:
-    def __init__(self, db: Session) -> None:
+    def __init__(
+        self, db: Session, course_provider: CourseProvider | None = None
+    ) -> None:
         self.db = db
+        self.course_import_service = CourseImportService(db, course_provider=course_provider)
 
     def create_course(self, payload: CourseCreate) -> Course:
         course = Course(**payload.model_dump())
@@ -31,25 +51,8 @@ class RoundService:
         self.db.refresh(course)
         return course
 
-    def search_courses(self, q: str) -> list[Course]:
-        query = q.strip()
-        if len(query) < 2:
-            raise ValidationError("Search query must be at least 2 characters.")
-
-        stmt = (
-            select(Course)
-            .where(
-                or_(
-                    Course.name.ilike(f"%{query}%"),
-                    Course.city.ilike(f"%{query}%"),
-                    Course.state.ilike(f"%{query}%"),
-                    Course.country.ilike(f"%{query}%"),
-                )
-            )
-            .order_by(Course.name.asc())
-            .limit(25)
-        )
-        return self.db.execute(stmt).scalars().all()
+    def search_courses(self, q: str) -> list[ExternalCourseSearchRead]:
+        return self.course_import_service.search_courses(q)
 
     def get_course_detail(self, course_id: int) -> Course:
         stmt = select(Course).where(Course.id == course_id).options(selectinload(Course.holes))
@@ -57,8 +60,7 @@ class RoundService:
         if course is None:
             raise NotFoundError("Course not found.", {"course_id": str(course_id)})
 
-        course.holes.sort(key=lambda hole: hole.hole_number)
-        return course
+        return self.course_import_service.hydrate_course_if_needed(course)
 
     def create_round(self, payload: RoundCreate) -> Round:
         round_obj = Round(notes=payload.notes)
@@ -90,6 +92,22 @@ class RoundService:
         course = self.db.get(Course, payload.course_id)
         if course is None:
             raise NotFoundError("Course not found.", {"course_id": str(payload.course_id)})
+
+        round_obj.course_id = course.id
+        self.db.commit()
+        self.db.refresh(round_obj)
+        return round_obj
+
+    def get_external_course_detail(self, external_id: str) -> ExternalCourseDetailRead:
+        return self.course_import_service.get_external_course_detail(external_id)
+
+    def import_course_and_assign_round(
+        self, round_id: int, payload: CourseImportRequest
+    ) -> Round:
+        round_obj = self.get_round(round_id)
+        self._ensure_round_editable(round_obj)
+
+        course = self.course_import_service.import_course_snapshot(payload.external_id)
 
         round_obj.course_id = course.id
         self.db.commit()
