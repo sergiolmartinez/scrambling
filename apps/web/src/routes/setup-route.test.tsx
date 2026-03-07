@@ -114,4 +114,34 @@ describe('SetupRoute', () => {
       expect(screen.getByRole('button', { name: /continue to scoring/i })).toBeEnabled();
     });
   });
+
+  it('shows locked message and disables setup mutations when round is completed', async () => {
+    useRoundSessionStore.setState({ roundId: 11 });
+    mocks.getRoundAggregate.mockResolvedValue({
+      round: { id: 11, status: 'completed', course_id: 100, started_at: null, completed_at: null, notes: null },
+      course: {
+        id: 100,
+        external_course_id: null,
+        name: 'Pebble',
+        city: null,
+        state: null,
+        country: null,
+        total_holes: 18,
+        source: 'manual',
+      },
+      players: [{ id: 1, round_id: 11, display_name: 'A', sort_order: 1 }],
+      hole_scores: [],
+      contributions: [],
+    });
+
+    renderSetup();
+
+    await waitFor(() => {
+      expect(screen.getByText(/completed and locked/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: /add player/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /edit/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /remove/i })).toBeDisabled();
+  });
 });

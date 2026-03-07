@@ -37,6 +37,7 @@
 
 - continue-to-scoring action stays disabled until at least one player and assigned course exist
 - continue-to-scoring action routes to scoring shell with current round context
+- completed rounds show locked messaging and disable setup mutations
 
 ## Hole scoring
 
@@ -68,3 +69,5 @@
 - round becomes locked
 - mutating endpoints reject further changes
 - summary shows players, course, hole scores, and contribution totals
+- summary route shows leaderboard and hole-by-hole results in a completion-focused layout
+- leaderboard route shows ordered totals and clear final-state messaging for completed rounds

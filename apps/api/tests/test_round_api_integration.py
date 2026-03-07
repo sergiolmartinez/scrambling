@@ -120,3 +120,70 @@ def test_scoring_contributions_leaderboard_and_summary(client: TestClient) -> No
     assert summary.status_code == 200
     assert len(summary.json()["hole_scores"]) == 1
     assert len(summary.json()["leaderboard"]) == 2
+
+
+def test_completed_round_rejects_mutations_across_setup_and_scoring(client: TestClient) -> None:
+    course = client.post(
+        "/api/v1/courses",
+        json={
+            "name": "Locked Test Course",
+            "city": "Austin",
+            "state": "TX",
+            "country": "USA",
+            "total_holes": 18,
+            "source": "manual",
+        },
+    ).json()
+
+    created_round = client.post("/api/v1/rounds", json={})
+    round_id = created_round.json()["id"]
+
+    player_one = client.post(
+        f"/api/v1/rounds/{round_id}/players",
+        json={"display_name": "Alice", "sort_order": 1},
+    ).json()
+    player_two = client.post(
+        f"/api/v1/rounds/{round_id}/players",
+        json={"display_name": "Bob", "sort_order": 2},
+    ).json()
+
+    completed = client.post(f"/api/v1/rounds/{round_id}/complete")
+    assert completed.status_code == 200
+
+    assert (
+        client.post(
+            f"/api/v1/rounds/{round_id}/course", json={"course_id": course["id"]}
+        ).status_code
+        == 423
+    )
+    assert (
+        client.post(
+            f"/api/v1/rounds/{round_id}/players",
+            json={"display_name": "Charlie", "sort_order": 3},
+        ).status_code
+        == 423
+    )
+    assert (
+        client.patch(
+            f"/api/v1/rounds/{round_id}/players/{player_one['id']}",
+            json={"display_name": "Renamed"},
+        ).status_code
+        == 423
+    )
+    assert client.delete(
+        f"/api/v1/rounds/{round_id}/players/{player_two['id']}"
+    ).status_code == 423
+    assert (
+        client.put(
+            f"/api/v1/rounds/{round_id}/holes/1",
+            json={"score": 4, "par_snapshot": 4, "completed": True},
+        ).status_code
+        == 423
+    )
+    assert (
+        client.post(
+            f"/api/v1/rounds/{round_id}/holes/1/shots",
+            json={"shot_number": 1, "round_player_ids": [player_one["id"]]},
+        ).status_code
+        == 423
+    )

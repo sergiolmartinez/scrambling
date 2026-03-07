@@ -115,6 +115,7 @@ export function SetupRoute(): JSX.Element {
   const maxPlayersReached = players.length >= 4;
   const hasAssignedCourse = Boolean(roundAggregate.data?.course);
   const canContinueToScoring = Boolean(roundId && hasAssignedCourse && players.length > 0);
+  const isLocked = roundAggregate.data?.round.status === 'completed';
 
   return (
     <div className='grid gap-6 lg:grid-cols-2'>
@@ -146,6 +147,9 @@ export function SetupRoute(): JSX.Element {
           ) : (
             <p className='text-sm text-zinc-500'>No round selected yet.</p>
           )}
+          {isLocked ? (
+            <p className='text-sm text-amber-300'>This round is completed and locked. Create a new round to edit setup.</p>
+          ) : null}
 
           {setupError ? <ErrorState message={setupError} /> : null}
         </div>
@@ -192,7 +196,7 @@ export function SetupRoute(): JSX.Element {
                       assignCourse.mutate(course.id);
                     }
                   }}
-                  disabled={roundId === null || assignCourse.isPending}
+                  disabled={roundId === null || isLocked || assignCourse.isPending}
                 >
                   {selectedCourseId === course.id ? 'Selected' : 'Assign'}
                 </Button>
@@ -224,7 +228,7 @@ export function SetupRoute(): JSX.Element {
           <Button
             type='submit'
             variant='primary'
-            disabled={roundId === null || maxPlayersReached || addPlayer.isPending}
+            disabled={roundId === null || isLocked || maxPlayersReached || addPlayer.isPending}
           >
             Add Player
           </Button>
@@ -249,6 +253,7 @@ export function SetupRoute(): JSX.Element {
               onDelete={() => deletePlayer.mutate(player.id)}
               onEdit={(payload) => updatePlayer.mutate({ playerId: player.id, payload })}
               player={player}
+              isLocked={isLocked}
               editing={editingPlayerId === player.id}
               setEditing={(isEditing) => setEditingPlayerId(isEditing ? player.id : null)}
             />
@@ -261,13 +266,14 @@ export function SetupRoute(): JSX.Element {
 
 type PlayerRowProps = {
   player: { id: number; display_name: string; sort_order: number };
+  isLocked: boolean;
   editing: boolean;
   setEditing: (editing: boolean) => void;
   onEdit: (payload: PlayerFormValues) => void;
   onDelete: () => void;
 };
 
-function PlayerRow({ player, editing, setEditing, onEdit, onDelete }: PlayerRowProps): JSX.Element {
+function PlayerRow({ player, isLocked, editing, setEditing, onEdit, onDelete }: PlayerRowProps): JSX.Element {
   const editForm = useForm<PlayerFormValues>({
     resolver: zodResolver(playerFormSchema),
     defaultValues: {
@@ -284,10 +290,10 @@ function PlayerRow({ player, editing, setEditing, onEdit, onDelete }: PlayerRowP
           <p className='text-xs text-zinc-500'>Sort order: {player.sort_order}</p>
         </div>
         <div className='flex gap-2'>
-          <Button onClick={() => setEditing(true)} type='button' variant='outline'>
+          <Button onClick={() => setEditing(true)} type='button' variant='outline' disabled={isLocked}>
             Edit
           </Button>
-          <Button onClick={onDelete} type='button' variant='outline'>
+          <Button onClick={onDelete} type='button' variant='outline' disabled={isLocked}>
             Remove
           </Button>
         </div>
@@ -307,7 +313,7 @@ function PlayerRow({ player, editing, setEditing, onEdit, onDelete }: PlayerRowP
         type='number'
         {...editForm.register('sort_order', { valueAsNumber: true })}
       />
-      <Button type='submit' variant='primary'>
+      <Button type='submit' variant='primary' disabled={isLocked}>
         Save
       </Button>
       <Button onClick={() => setEditing(false)} type='button' variant='outline'>

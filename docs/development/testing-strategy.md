@@ -21,6 +21,7 @@
 - `alembic -c apps/api/alembic.ini upgrade head`
 - `python -m pytest apps/api/tests`
 - integration suite includes round lifecycle, contributions, leaderboard, and summary endpoint flows
+- integration suite verifies completed rounds reject mutating setup and scoring endpoints with locked status
 
 ### Frontend checks
 
@@ -31,6 +32,8 @@
 - route shell tests cover setup navigation and round creation shell behavior
 - setup flow tests cover max-player UI enforcement and scoring handoff readiness
 - scoring route tests cover hole navigation, hole-score upsert, multi-player contribution submission, and single contribution deletion
+- leaderboard and summary route tests cover ordered totals and summary data rendering
+- setup route tests cover completed-round locked UX state
 
 ## Manual verification expectations
 
