@@ -71,3 +71,9 @@
 - summary shows players, course, hole scores, and contribution totals
 - summary route shows leaderboard and hole-by-hole results in a completion-focused layout
 - leaderboard route shows ordered totals and clear final-state messaging for completed rounds
+
+## Release prep
+
+- run all web and API test commands from the release checklist
+- verify CI workflow passes both `web` and `api` jobs
+- confirm manual end-to-end flow from setup through summary

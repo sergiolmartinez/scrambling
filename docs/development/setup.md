@@ -28,6 +28,8 @@ CORS_ORIGINS=http://localhost:5173
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
+The web API client automatically appends `/api/v1` when it is not included.
+
 ## Suggested first-run commands
 
 ### Install dependencies

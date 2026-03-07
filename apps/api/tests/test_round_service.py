@@ -1,5 +1,11 @@
 from app.models import RoundStatus
-from app.schemas import HoleScoreUpsert, RoundCreate, RoundPlayerCreate, ShotContributionCreate
+from app.schemas import (
+    CourseCreate,
+    HoleScoreUpsert,
+    RoundCreate,
+    RoundPlayerCreate,
+    ShotContributionCreate,
+)
 from app.services.errors import ConflictError, LockedRoundError, ValidationError
 from app.services.round_service import RoundService
 
@@ -80,3 +86,43 @@ def test_hole_score_upsert_updates_existing_record(db_session) -> None:
     assert first.id == second.id
     assert second.score == 4
     assert second.completed is True
+
+
+def test_course_search_requires_minimum_query_length(db_session) -> None:
+    service = RoundService(db_session)
+    service.create_course(
+        CourseCreate(
+            name="Pebble Beach Golf Links",
+            city="Pebble Beach",
+            state="CA",
+            country="USA",
+            total_holes=18,
+            source="manual",
+        )
+    )
+
+    try:
+        service.search_courses(" ")
+        raised = False
+    except ValidationError:
+        raised = True
+
+    assert raised
+
+
+def test_course_search_trims_whitespace(db_session) -> None:
+    service = RoundService(db_session)
+    service.create_course(
+        CourseCreate(
+            name="Augusta National",
+            city="Augusta",
+            state="GA",
+            country="USA",
+            total_holes=18,
+            source="manual",
+        )
+    )
+
+    results = service.search_courses("  Augusta  ")
+    assert len(results) == 1
+    assert results[0].name == "Augusta National"

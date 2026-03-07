@@ -31,7 +31,11 @@ class RoundService:
         self.db.refresh(course)
         return course
 
-    def search_courses(self, query: str) -> list[Course]:
+    def search_courses(self, q: str) -> list[Course]:
+        query = q.strip()
+        if len(query) < 2:
+            raise ValidationError("Search query must be at least 2 characters.")
+
         stmt = (
             select(Course)
             .where(

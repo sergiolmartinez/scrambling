@@ -71,6 +71,7 @@ Search courses by text query.
 Query params:
 - `q`
 - optional location parameters later
+- `q` must be at least 2 non-whitespace characters
 
 #### `GET /courses/{course_id}`
 Get course detail with holes.

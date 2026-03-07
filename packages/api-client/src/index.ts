@@ -49,8 +49,23 @@ export type ApiClient = {
 };
 
 export function createApiClient(baseUrl: string): ApiClient {
+  const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+
+  async function getErrorMessage(response: Response): Promise<string> {
+    try {
+      const payload = (await response.json()) as ApiErrorResponse;
+      if (payload.message) {
+        return payload.message;
+      }
+    } catch {
+      // Keep fallback when response body is not JSON.
+    }
+
+    return `Request failed: ${response.status}`;
+  }
+
   async function requestJson<T>(path: string, init?: RequestInitWithMethod): Promise<T> {
-    const response = await fetch(`${baseUrl}${path}`, {
+    const response = await fetch(`${normalizedBaseUrl}${path}`, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -58,30 +73,21 @@ export function createApiClient(baseUrl: string): ApiClient {
     });
 
     if (!response.ok) {
-      let errorMessage = `Request failed: ${response.status}`;
-      try {
-        const payload = (await response.json()) as ApiErrorResponse;
-        if (payload.message) {
-          errorMessage = payload.message;
-        }
-      } catch {
-        // Keep default error message when body is missing or non-JSON.
-      }
-      throw new Error(errorMessage);
+      throw new Error(await getErrorMessage(response));
     }
 
     return (await response.json()) as T;
   }
 
   async function requestNoContent(path: string, init: RequestInitWithMethod): Promise<void> {
-    const response = await fetch(`${baseUrl}${path}`, {
+    const response = await fetch(`${normalizedBaseUrl}${path}`, {
       headers: {
         'Content-Type': 'application/json',
       },
       ...init,
     });
     if (!response.ok) {
-      throw new Error(`Request failed: ${response.status}`);
+      throw new Error(await getErrorMessage(response));
     }
   }
 
@@ -181,4 +187,9 @@ export function createApiClient(baseUrl: string): ApiClient {
       return requestJson<RoundSummaryRead>(`/rounds/${roundId}/summary`, { method: 'GET' });
     },
   };
+}
+
+function normalizeBaseUrl(baseUrl: string): string {
+  const trimmed = baseUrl.trim().replace(/\/+$/, '');
+  return trimmed.endsWith('/api/v1') ? trimmed : `${trimmed}/api/v1`;
 }

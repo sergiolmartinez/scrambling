@@ -79,6 +79,12 @@ def test_course_search_detail_assign_and_round_aggregate(client: TestClient) -> 
     assert len(payload["players"]) == 1
 
 
+def test_course_search_rejects_short_queries(client: TestClient) -> None:
+    response = client.get("/api/v1/courses/search?q=a")
+    assert response.status_code == 400
+    assert response.json()["code"] == "validation_error"
+
+
 def test_scoring_contributions_leaderboard_and_summary(client: TestClient) -> None:
     created_round = client.post("/api/v1/rounds", json={})
     round_id = created_round.json()["id"]
@@ -146,6 +152,10 @@ def test_completed_round_rejects_mutations_across_setup_and_scoring(client: Test
         f"/api/v1/rounds/{round_id}/players",
         json={"display_name": "Bob", "sort_order": 2},
     ).json()
+    client.post(
+        f"/api/v1/rounds/{round_id}/holes/1/shots",
+        json={"shot_number": 1, "round_player_ids": [player_one["id"]]},
+    )
 
     completed = client.post(f"/api/v1/rounds/{round_id}/complete")
     assert completed.status_code == 200
@@ -187,3 +197,33 @@ def test_completed_round_rejects_mutations_across_setup_and_scoring(client: Test
         ).status_code
         == 423
     )
+    assert (
+        client.delete(
+            f"/api/v1/rounds/{round_id}/holes/1/shots/1/players/{player_one['id']}"
+        ).status_code
+        == 423
+    )
+
+
+def test_complete_round_requires_at_least_one_player(client: TestClient) -> None:
+    created_round = client.post("/api/v1/rounds", json={})
+    round_id = created_round.json()["id"]
+
+    response = client.post(f"/api/v1/rounds/{round_id}/complete")
+    assert response.status_code == 400
+    assert response.json()["code"] == "validation_error"
+
+
+def test_delete_missing_contribution_returns_not_found(client: TestClient) -> None:
+    created_round = client.post("/api/v1/rounds", json={})
+    round_id = created_round.json()["id"]
+    player = client.post(
+        f"/api/v1/rounds/{round_id}/players",
+        json={"display_name": "Alice", "sort_order": 1},
+    ).json()
+
+    response = client.delete(
+        f"/api/v1/rounds/{round_id}/holes/1/shots/3/players/{player['id']}"
+    )
+    assert response.status_code == 404
+    assert response.json()["code"] == "not_found"

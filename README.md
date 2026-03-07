@@ -76,3 +76,9 @@ python -m pytest apps/api/tests
 ## CI
 
 A CI skeleton is available at `.github/workflows/ci.yml` and runs web + API checks on pushes and pull requests.
+
+## Release prep
+
+Use the MVP release checklist before cutting a release:
+
+- `docs/development/release-checklist.md`

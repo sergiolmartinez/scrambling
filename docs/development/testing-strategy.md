@@ -22,6 +22,7 @@
 - `python -m pytest apps/api/tests`
 - integration suite includes round lifecycle, contributions, leaderboard, and summary endpoint flows
 - integration suite verifies completed rounds reject mutating setup and scoring endpoints with locked status
+- integration suite includes edge cases for short course search queries, missing contribution deletes, and completion without players
 
 ### Frontend checks
 
@@ -43,3 +44,7 @@ Every milestone should update the verification checklist with:
 - empty state
 - validation failure
 - persistence across refresh
+
+## Release gate
+
+Before a release, run the checklist in `docs/development/release-checklist.md` end-to-end.
