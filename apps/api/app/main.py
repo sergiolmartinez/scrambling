@@ -9,7 +9,9 @@ from app.services.errors import DomainError
 
 app = FastAPI(title="Scrambling API", version="0.2.0")
 
-allowed_origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+allowed_origins = settings.cors_origin_list()
+if not allowed_origins:
+    allowed_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,

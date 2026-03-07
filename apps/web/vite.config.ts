@@ -11,10 +11,12 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
   },
   test: {
     environment: 'jsdom',
     setupFiles: './vitest.setup.ts',
     globals: true,
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
 });

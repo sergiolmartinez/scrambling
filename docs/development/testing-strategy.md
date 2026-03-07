@@ -29,6 +29,8 @@
 - `npm run build --prefix apps/web`
 - `npm run typecheck --prefix apps/web`
 - route shell tests cover setup navigation and round creation shell behavior
+- setup flow tests cover max-player UI enforcement and scoring handoff readiness
+- scoring route tests cover hole navigation, hole-score upsert, multi-player contribution submission, and single contribution deletion
 
 ## Manual verification expectations
 
