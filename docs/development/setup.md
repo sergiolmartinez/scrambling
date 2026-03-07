@@ -13,7 +13,7 @@
 
 ## Suggested environment files
 
-### API `.env` (repo root `.env` recommended)
+### API `.env` (repo root `.env` or `apps/api/.env`)
 
 ```env
 APP_ENV=development
@@ -26,7 +26,7 @@ GOLFCOURSEAPI_TIMEOUT_SECONDS=10
 GOLFCOURSEAPI_CACHE_TTL_SECONDS=300
 ```
 
-Note: API settings load `.env` from the current working directory. Running commands from repo root should use root `.env`.
+Note: API settings load env vars from both `.env` and `apps/api/.env`. Either location is valid for local development.
 
 ### `apps/web/.env`
 

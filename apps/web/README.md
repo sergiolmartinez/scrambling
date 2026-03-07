@@ -14,6 +14,7 @@ React + Vite web shell for the Scrambling MVP frontend.
 ## Commands
 
 ```bash
+npm install --prefix apps/web
 npm run dev --prefix apps/web
 npm run lint --prefix apps/web
 npm run test --prefix apps/web

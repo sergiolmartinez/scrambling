@@ -4,7 +4,7 @@ FastAPI + SQLAlchemy + Alembic API for Scrambling MVP.
 
 ## Environment
 
-Create `.env` in repo root (or run commands from `apps/api` with a local `.env`) using:
+Create `.env` in repo root or `apps/api/.env` using:
 
 - `apps/api/.env.example`
 
@@ -29,6 +29,12 @@ python -m ruff check apps/api
 python -m ruff format --check apps/api
 python -m pytest apps/api/tests
 ```
+
+## Local course snapshot behavior
+
+- `POST /api/v1/rounds/{round_id}/course/import` fetches provider detail and stores a local snapshot in `courses` + `course_holes`.
+- `GET /api/v1/courses/{course_id}` serves local data.
+- For `source=golfcourseapi`, if a course row exists without holes, the first `GET` lazily hydrates holes once and persists `imported_at`.
 
 ## Course integration endpoints
 

@@ -83,6 +83,11 @@ Get normalized external course detail with hole data.
 #### `GET /courses/{course_id}`
 Get course detail with holes.
 
+Behavior:
+- returns local snapshot data.
+- for `source=golfcourseapi`, if no `course_holes` exist yet, backend performs one lazy provider fetch, snapshots holes, updates `imported_at`, then returns the hydrated local snapshot.
+- if holes already exist, no provider request is made.
+
 #### `POST /rounds/{round_id}/course`
 Assign a course to a round.
 

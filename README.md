@@ -93,3 +93,5 @@ Use the MVP release checklist before cutting a release:
 - API contract: `docs/architecture/api-contract.md`
 - Domain model: `docs/architecture/domain-model.md`
 - Integration details: `docs/integrations/golfcourseapi.md`
+
+Course search/detail always flows through backend integration and snapshots imported provider data locally.

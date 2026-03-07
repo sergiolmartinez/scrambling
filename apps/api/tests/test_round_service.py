@@ -16,6 +16,9 @@ from app.services.round_service import RoundService
 
 
 class StubProvider:
+    def __init__(self) -> None:
+        self.detail_calls = 0
+
     def search_courses(self, query: str) -> list[NormalizedCourseSummary]:
         return [
             NormalizedCourseSummary(
@@ -30,6 +33,7 @@ class StubProvider:
         ]
 
     def get_course_detail(self, external_id: str) -> NormalizedCourseDetail:
+        self.detail_calls += 1
         return NormalizedCourseDetail(
             external_id=external_id,
             name="Pine Hills",
@@ -149,7 +153,8 @@ def test_course_search_trims_whitespace(db_session) -> None:
 
 
 def test_import_course_snapshots_and_assigns_round(db_session) -> None:
-    service = RoundService(db_session, course_provider=StubProvider())
+    provider = StubProvider()
+    service = RoundService(db_session, course_provider=provider)
     round_obj = service.create_round(RoundCreate())
     service.add_player(round_obj.id, RoundPlayerCreate(display_name="A", sort_order=1))
 
@@ -166,3 +171,32 @@ def test_import_course_snapshots_and_assigns_round(db_session) -> None:
     assert course_obj is not None
     assert course_obj.imported_at is not None
     assert course_obj.external_payload_hash is not None
+
+
+def test_external_course_detail_lazy_hydrates_missing_holes(db_session) -> None:
+    provider = StubProvider()
+    service = RoundService(db_session, course_provider=provider)
+
+    course = Course(
+        external_course_id="991",
+        name="Pine Hills",
+        city="Denver",
+        state="CO",
+        country="USA",
+        total_holes=18,
+        source="golfcourseapi",
+    )
+    db_session.add(course)
+    db_session.commit()
+
+    hydrated = service.get_course_detail(course.id)
+    assert hydrated.id == course.id
+    assert len(hydrated.holes) == 1
+    assert hydrated.holes[0].hole_number == 1
+    assert hydrated.holes[0].par == 4
+    assert hydrated.imported_at is not None
+    assert provider.detail_calls == 1
+
+    second = service.get_course_detail(course.id)
+    assert len(second.holes) == 1
+    assert provider.detail_calls == 1
