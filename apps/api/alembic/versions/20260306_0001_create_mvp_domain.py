@@ -8,6 +8,7 @@ Create Date: 2026-03-06 00:00:00.000000
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
@@ -17,11 +18,26 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-round_status = sa.Enum("draft", "active", "completed", name="round_status")
+round_status = postgresql.ENUM(
+    "draft",
+    "active",
+    "completed",
+    name="round_status",
+    create_type=False,
+)
 
 
 def upgrade() -> None:
-    round_status.create(op.get_bind(), checkfirst=True)
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            CREATE TYPE round_status AS ENUM ('draft', 'active', 'completed');
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+        END $$;
+        """
+    )
 
     op.create_table(
         "courses",

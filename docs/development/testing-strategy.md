@@ -20,6 +20,7 @@
 - `python -m ruff format --check apps/api`
 - `alembic -c apps/api/alembic.ini upgrade head`
 - `python -m pytest apps/api/tests`
+- integration suite includes round lifecycle, contributions, leaderboard, and summary endpoint flows
 
 ### Frontend checks
 

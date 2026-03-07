@@ -10,6 +10,7 @@
 ## Round creation
 
 - can create a round
+- round aggregate endpoint includes round, players, hole scores, and contributions
 - new round loads with empty players and no course
 - refresh preserves round
 
@@ -24,6 +25,7 @@
 ## Course selection
 
 - can search courses
+- can fetch course detail by id
 - can select course
 - hole metadata appears in scoring view
 - empty and no-result states render cleanly
@@ -39,6 +41,7 @@
 
 - can add a contribution for one player on one shot
 - can add multiple contributing players on same shot
+- can fetch contributions for one hole
 - duplicate player on same hole/shot is prevented
 - can remove one contribution
 - removed contribution no longer appears on leaderboard

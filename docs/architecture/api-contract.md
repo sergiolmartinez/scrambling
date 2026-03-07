@@ -10,15 +10,21 @@
 
 - `GET /health`
 - `POST /courses`
+- `GET /courses/search`
+- `GET /courses/{course_id}`
 - `POST /rounds`
 - `GET /rounds/{round_id}`
 - `POST /rounds/{round_id}/players`
+- `PATCH /rounds/{round_id}/players/{player_id}`
+- `DELETE /rounds/{round_id}/players/{player_id}`
 - `POST /rounds/{round_id}/course`
 - `PUT /rounds/{round_id}/holes/{hole_number}`
 - `POST /rounds/{round_id}/holes/{hole_number}/shots`
+- `GET /rounds/{round_id}/holes/{hole_number}/shots`
+- `DELETE /rounds/{round_id}/holes/{hole_number}/shots/{shot_number}/players/{player_id}`
+- `GET /rounds/{round_id}/leaderboard`
 - `POST /rounds/{round_id}/complete`
-
-Remaining endpoints in this document stay planned for follow-up prompts.
+- `GET /rounds/{round_id}/summary`
 
 ### Round lifecycle
 
