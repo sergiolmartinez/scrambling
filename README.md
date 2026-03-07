@@ -44,6 +44,11 @@ python -m venv .venv
 pip install -r apps/api/requirements.txt
 ```
 
+Create environment files:
+
+- `apps/api/.env` from `apps/api/.env.example`
+- `apps/web/.env` from `apps/web/.env.example`
+
 ## Run
 
 ### Web
@@ -82,3 +87,9 @@ A CI skeleton is available at `.github/workflows/ci.yml` and runs web + API chec
 Use the MVP release checklist before cutting a release:
 
 - `docs/development/release-checklist.md`
+
+## Architecture pointers
+
+- API contract: `docs/architecture/api-contract.md`
+- Domain model: `docs/architecture/domain-model.md`
+- Integration details: `docs/integrations/golfcourseapi.md`

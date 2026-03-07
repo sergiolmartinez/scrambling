@@ -10,12 +10,14 @@ Suggested fields:
 
 - id
 - external_course_id nullable
+- external_payload_hash nullable
 - name
 - city nullable
 - state nullable
 - country nullable
 - total_holes
 - source
+- imported_at nullable
 - created_at
 - updated_at
 

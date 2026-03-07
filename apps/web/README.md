@@ -25,6 +25,13 @@ npm run typecheck --prefix apps/web
 
 Create `apps/web/.env` from `.env.example`.
 
+`VITE_API_BASE_URL` may be either:
+
+- `http://localhost:8000`
+- `http://localhost:8000/api/v1`
+
+The client normalizes this automatically.
+
 ## Implemented shell routes
 
 - `/setup`

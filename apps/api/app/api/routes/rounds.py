@@ -6,8 +6,11 @@ from app.schemas import (
     CourseAssignRequest,
     CourseCreate,
     CourseDetailRead,
+    CourseImportRequest,
     CourseRead,
     ErrorResponse,
+    ExternalCourseDetailRead,
+    ExternalCourseSearchRead,
     HoleScoreRead,
     HoleScoreUpsert,
     LeaderboardEntryRead,
@@ -75,6 +78,15 @@ def assign_course(
     return RoundService(db).assign_course(round_id, payload)
 
 
+@router.post("/{round_id}/course/import", response_model=RoundRead)
+def import_course_and_assign(
+    round_id: int,
+    payload: CourseImportRequest,
+    db: Session = Depends(get_db),
+) -> RoundRead:
+    return RoundService(db).import_course_and_assign_round(round_id, payload)
+
+
 @router.put("/{round_id}/holes/{hole_number}", response_model=HoleScoreRead)
 def upsert_hole_score(
     round_id: int,
@@ -138,9 +150,16 @@ def create_course(payload: CourseCreate, db: Session = Depends(get_db)) -> Cours
     return RoundService(db).create_course(payload)
 
 
-@course_router.get("/search", response_model=list[CourseRead])
-def search_courses(q: str, db: Session = Depends(get_db)) -> list[CourseRead]:
+@course_router.get("/search", response_model=list[ExternalCourseSearchRead])
+def search_courses(q: str, db: Session = Depends(get_db)) -> list[ExternalCourseSearchRead]:
     return RoundService(db).search_courses(q)
+
+
+@course_router.get("/external/{external_id}", response_model=ExternalCourseDetailRead)
+def get_external_course_detail(
+    external_id: str, db: Session = Depends(get_db)
+) -> ExternalCourseDetailRead:
+    return RoundService(db).get_external_course_detail(external_id)
 
 
 @course_router.get("/{course_id}", response_model=CourseDetailRead)

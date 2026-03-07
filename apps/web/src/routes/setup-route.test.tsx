@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   addPlayer: vi.fn(),
   updatePlayer: vi.fn(),
   deletePlayer: vi.fn(),
-  assignCourse: vi.fn(),
+  importCourseToRound: vi.fn(),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -24,7 +24,7 @@ vi.mock('@/lib/api', () => ({
     addPlayer: mocks.addPlayer,
     updatePlayer: mocks.updatePlayer,
     deletePlayer: mocks.deletePlayer,
-    assignCourse: mocks.assignCourse,
+    importCourseToRound: mocks.importCourseToRound,
   },
 }));
 
@@ -50,7 +50,7 @@ beforeEach(() => {
   mocks.addPlayer.mockReset();
   mocks.updatePlayer.mockReset();
   mocks.deletePlayer.mockReset();
-  mocks.assignCourse.mockReset();
+  mocks.importCourseToRound.mockReset();
 
   mocks.searchCourses.mockResolvedValue([]);
 });

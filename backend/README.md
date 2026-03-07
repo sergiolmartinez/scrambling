@@ -1,3 +1,12 @@
+# Legacy Notice
+
+`backend/` is legacy proof-of-concept code retained only for reference.
+
+Active backend is `apps/api`. Use:
+
+- `README.md`
+- `apps/api/README.md`
+
 # Scrambling API
 
 This is the backend API for the Scrambling golf scorekeeping app. It powers round creation, player contributions, leaderboard logic, and round summaries.

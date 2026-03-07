@@ -1,13 +1,30 @@
+import hashlib
+import json
+from dataclasses import asdict
 from datetime import UTC, datetime
 
-from sqlalchemy import Select, func, or_, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Course, HoleScore, Round, RoundPlayer, RoundStatus, ShotContribution
+from app.integrations import get_course_provider
+from app.integrations.course_provider import CourseProvider, NormalizedCourseDetail
+from app.integrations.golfcourseapi import GolfCourseApiClientError
+from app.models import (
+    Course,
+    CourseHole,
+    HoleScore,
+    Round,
+    RoundPlayer,
+    RoundStatus,
+    ShotContribution,
+)
 from app.schemas import (
     CourseAssignRequest,
     CourseCreate,
+    CourseImportRequest,
+    ExternalCourseDetailRead,
+    ExternalCourseSearchRead,
     HoleScoreUpsert,
     LeaderboardEntryRead,
     RoundAggregateRead,
@@ -17,12 +34,19 @@ from app.schemas import (
     RoundSummaryRead,
     ShotContributionCreate,
 )
-from app.services.errors import ConflictError, LockedRoundError, NotFoundError, ValidationError
+from app.services.errors import (
+    ConflictError,
+    ExternalServiceError,
+    LockedRoundError,
+    NotFoundError,
+    ValidationError,
+)
 
 
 class RoundService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, course_provider: CourseProvider | None = None) -> None:
         self.db = db
+        self._course_provider = course_provider
 
     def create_course(self, payload: CourseCreate) -> Course:
         course = Course(**payload.model_dump())
@@ -31,25 +55,19 @@ class RoundService:
         self.db.refresh(course)
         return course
 
-    def search_courses(self, q: str) -> list[Course]:
+    def search_courses(self, q: str) -> list[ExternalCourseSearchRead]:
         query = q.strip()
         if len(query) < 2:
             raise ValidationError("Search query must be at least 2 characters.")
 
-        stmt = (
-            select(Course)
-            .where(
-                or_(
-                    Course.name.ilike(f"%{query}%"),
-                    Course.city.ilike(f"%{query}%"),
-                    Course.state.ilike(f"%{query}%"),
-                    Course.country.ilike(f"%{query}%"),
-                )
-            )
-            .order_by(Course.name.asc())
-            .limit(25)
-        )
-        return self.db.execute(stmt).scalars().all()
+        provider = self._resolve_course_provider()
+        try:
+            summaries = provider.search_courses(query)
+        except GolfCourseApiClientError as exc:
+            raise ExternalServiceError(exc.message) from exc
+        except Exception as exc:
+            raise ExternalServiceError("Course provider search failed.") from exc
+        return [ExternalCourseSearchRead(**asdict(course)) for course in summaries]
 
     def get_course_detail(self, course_id: int) -> Course:
         stmt = select(Course).where(Course.id == course_id).options(selectinload(Course.holes))
@@ -90,6 +108,59 @@ class RoundService:
         course = self.db.get(Course, payload.course_id)
         if course is None:
             raise NotFoundError("Course not found.", {"course_id": str(payload.course_id)})
+
+        round_obj.course_id = course.id
+        self.db.commit()
+        self.db.refresh(round_obj)
+        return round_obj
+
+    def get_external_course_detail(self, external_id: str) -> ExternalCourseDetailRead:
+        provider = self._resolve_course_provider()
+        try:
+            detail = provider.get_course_detail(external_id.strip())
+        except GolfCourseApiClientError as exc:
+            raise ExternalServiceError(exc.message) from exc
+        except Exception as exc:
+            raise ExternalServiceError("Course provider detail lookup failed.") from exc
+        return ExternalCourseDetailRead(
+            external_id=detail.external_id,
+            name=detail.name,
+            city=detail.city,
+            state=detail.state,
+            country=detail.country,
+            total_holes=detail.total_holes,
+            source=detail.source,
+            holes=[
+                {
+                    "id": hole.hole_number,
+                    "hole_number": hole.hole_number,
+                    "par": hole.par,
+                    "yardage": hole.yardage,
+                    "handicap": hole.handicap,
+                    "tee_name": hole.tee_name,
+                }
+                for hole in detail.holes
+            ],
+        )
+
+    def import_course_and_assign_round(
+        self, round_id: int, payload: CourseImportRequest
+    ) -> Round:
+        round_obj = self.get_round(round_id)
+        self._ensure_round_editable(round_obj)
+
+        external_id = payload.external_id.strip()
+        if not external_id:
+            raise ValidationError("external_id is required.")
+
+        provider = self._resolve_course_provider()
+        try:
+            detail = provider.get_course_detail(external_id)
+        except GolfCourseApiClientError as exc:
+            raise ExternalServiceError(exc.message) from exc
+        except Exception as exc:
+            raise ExternalServiceError("Course import from provider failed.") from exc
+        course = self._snapshot_external_course(detail)
 
         round_obj.course_id = course.id
         self.db.commit()
@@ -399,3 +470,74 @@ class RoundService:
     def _ensure_round_editable(round_obj: Round) -> None:
         if round_obj.status == RoundStatus.COMPLETED:
             raise LockedRoundError()
+
+    def _resolve_course_provider(self) -> CourseProvider:
+        if self._course_provider is not None:
+            return self._course_provider
+
+        try:
+            self._course_provider = get_course_provider()
+        except RuntimeError as exc:
+            raise ExternalServiceError("Course provider is not configured.") from exc
+
+        return self._course_provider
+
+    def _snapshot_external_course(self, detail: NormalizedCourseDetail) -> Course:
+        stmt = select(Course).where(
+            Course.source == detail.source,
+            Course.external_course_id == detail.external_id,
+        )
+        course = self.db.execute(stmt).scalar_one_or_none()
+
+        now = datetime.now(UTC)
+        payload_hash = self._build_payload_hash(detail)
+        if course is None:
+            course = Course(
+                external_course_id=detail.external_id,
+                name=detail.name,
+                city=detail.city,
+                state=detail.state,
+                country=detail.country,
+                total_holes=detail.total_holes,
+                source=detail.source,
+                imported_at=now,
+                external_payload_hash=payload_hash,
+            )
+            self.db.add(course)
+            self.db.flush()
+        else:
+            course.name = detail.name
+            course.city = detail.city
+            course.state = detail.state
+            course.country = detail.country
+            course.total_holes = detail.total_holes
+            course.imported_at = now
+            course.external_payload_hash = payload_hash
+
+            existing_holes = (
+                self.db.execute(select(CourseHole).where(CourseHole.course_id == course.id))
+                .scalars()
+                .all()
+            )
+            for row in existing_holes:
+                self.db.delete(row)
+
+        for hole in detail.holes:
+            self.db.add(
+                CourseHole(
+                    course_id=course.id,
+                    hole_number=hole.hole_number,
+                    par=hole.par,
+                    yardage=hole.yardage,
+                    handicap=hole.handicap,
+                    tee_name=hole.tee_name,
+                )
+            )
+
+        self.db.flush()
+        return course
+
+    @staticmethod
+    def _build_payload_hash(detail: NormalizedCourseDetail) -> str:
+        serialized = json.dumps(asdict(detail), sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()

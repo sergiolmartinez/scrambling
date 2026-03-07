@@ -1,5 +1,60 @@
 from fastapi.testclient import TestClient
 
+from app.integrations.course_provider import (
+    NormalizedCourseDetail,
+    NormalizedCourseHole,
+    NormalizedCourseSummary,
+)
+
+
+class StubCourseProvider:
+    def __init__(self) -> None:
+        self.raise_error = False
+
+    def search_courses(self, query: str) -> list[NormalizedCourseSummary]:
+        if self.raise_error:
+            raise RuntimeError("provider failure")
+        return [
+            NormalizedCourseSummary(
+                external_id="991",
+                name="Pine Hills",
+                city="Denver",
+                state="CO",
+                country="USA",
+                total_holes=18,
+                source="golfcourseapi",
+            )
+        ]
+
+    def get_course_detail(self, external_id: str) -> NormalizedCourseDetail:
+        if self.raise_error:
+            raise RuntimeError("provider failure")
+        return NormalizedCourseDetail(
+            external_id=external_id,
+            name="Pine Hills",
+            city="Denver",
+            state="CO",
+            country="USA",
+            total_holes=18,
+            source="golfcourseapi",
+            holes=[
+                NormalizedCourseHole(
+                    hole_number=1,
+                    par=4,
+                    yardage=410,
+                    handicap=8,
+                    tee_name="Blue",
+                ),
+                NormalizedCourseHole(
+                    hole_number=2,
+                    par=3,
+                    yardage=175,
+                    handicap=16,
+                    tee_name="Blue",
+                ),
+            ],
+        )
+
 
 def test_round_lifecycle_and_player_management(client: TestClient) -> None:
     created_round = client.post("/api/v1/rounds", json={}).json()
@@ -38,8 +93,19 @@ def test_round_lifecycle_and_player_management(client: TestClient) -> None:
     assert locked_response.status_code == 423
 
 
-def test_course_search_detail_assign_and_round_aggregate(client: TestClient) -> None:
-    created_course = client.post(
+def test_course_search_detail_assign_and_round_aggregate(client: TestClient, monkeypatch) -> None:
+    provider = StubCourseProvider()
+    monkeypatch.setattr("app.services.round_service.get_course_provider", lambda: provider)
+
+    search = client.get("/api/v1/courses/search?q=Pine")
+    assert search.status_code == 200
+    assert search.json()[0]["external_id"] == "991"
+
+    detail = client.get("/api/v1/courses/external/991")
+    assert detail.status_code == 200
+    assert detail.json()["holes"][0]["par"] == 4
+
+    created_manual_course = client.post(
         "/api/v1/courses",
         json={
             "name": "Pebble Beach Golf Links",
@@ -50,16 +116,8 @@ def test_course_search_detail_assign_and_round_aggregate(client: TestClient) -> 
             "source": "manual",
         },
     )
-    assert created_course.status_code == 201
-    course_id = created_course.json()["id"]
-
-    search = client.get("/api/v1/courses/search?q=Pebble")
-    assert search.status_code == 200
-    assert any(item["id"] == course_id for item in search.json())
-
-    detail = client.get(f"/api/v1/courses/{course_id}")
-    assert detail.status_code == 200
-    assert detail.json()["name"] == "Pebble Beach Golf Links"
+    assert created_manual_course.status_code == 201
+    manual_course_id = created_manual_course.json()["id"]
 
     created_round = client.post("/api/v1/rounds", json={})
     round_id = created_round.json()["id"]
@@ -68,14 +126,33 @@ def test_course_search_detail_assign_and_round_aggregate(client: TestClient) -> 
         json={"display_name": "Alice", "sort_order": 1},
     )
 
-    assigned = client.post(f"/api/v1/rounds/{round_id}/course", json={"course_id": course_id})
+    imported_assignment = client.post(
+        f"/api/v1/rounds/{round_id}/course/import",
+        json={"external_id": "991"},
+    )
+    assert imported_assignment.status_code == 200
+
+    assigned_manual = client.post(
+        f"/api/v1/rounds/{round_id}/course", json={"course_id": manual_course_id}
+    )
+    assert assigned_manual.status_code == 200
+    assert assigned_manual.json()["course_id"] == manual_course_id
+
+    external_course_id = imported_assignment.json()["course_id"]
+    external_detail = client.get(f"/api/v1/courses/{external_course_id}")
+    assert external_detail.status_code == 200
+    assert external_detail.json()["source"] == "golfcourseapi"
+
+    assigned = client.post(
+        f"/api/v1/rounds/{round_id}/course", json={"course_id": external_course_id}
+    )
     assert assigned.status_code == 200
-    assert assigned.json()["course_id"] == course_id
+    assert assigned.json()["course_id"] == external_course_id
 
     aggregate = client.get(f"/api/v1/rounds/{round_id}")
     assert aggregate.status_code == 200
     payload = aggregate.json()
-    assert payload["course"]["id"] == course_id
+    assert payload["course"]["id"] == external_course_id
     assert len(payload["players"]) == 1
 
 
@@ -227,3 +304,38 @@ def test_delete_missing_contribution_returns_not_found(client: TestClient) -> No
     )
     assert response.status_code == 404
     assert response.json()["code"] == "not_found"
+
+
+def test_provider_failure_returns_clean_error(client: TestClient, monkeypatch) -> None:
+    provider = StubCourseProvider()
+    provider.raise_error = True
+    monkeypatch.setattr("app.services.round_service.get_course_provider", lambda: provider)
+
+    response = client.get("/api/v1/courses/search?q=Pine")
+    assert response.status_code == 502
+    assert response.json()["code"] == "external_service_error"
+
+
+def test_import_persists_snapshot_fields(client: TestClient, monkeypatch) -> None:
+    provider = StubCourseProvider()
+    monkeypatch.setattr("app.services.round_service.get_course_provider", lambda: provider)
+
+    created_round = client.post("/api/v1/rounds", json={})
+    round_id = created_round.json()["id"]
+    client.post(
+        f"/api/v1/rounds/{round_id}/players",
+        json={"display_name": "Alice", "sort_order": 1},
+    )
+
+    imported = client.post(
+        f"/api/v1/rounds/{round_id}/course/import",
+        json={"external_id": "991"},
+    )
+    assert imported.status_code == 200
+    course_id = imported.json()["course_id"]
+
+    course_detail = client.get(f"/api/v1/courses/{course_id}")
+    assert course_detail.status_code == 200
+    assert course_detail.json()["external_course_id"] == "991"
+    assert course_detail.json()["source"] == "golfcourseapi"
+    assert len(course_detail.json()["holes"]) == 2

@@ -15,6 +15,29 @@ export type CourseRead = {
   source: string;
 };
 
+export type ExternalCourseSearchRead = {
+  external_id: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  total_holes: number;
+  source: string;
+};
+
+export type ExternalCourseDetailRead = ExternalCourseSearchRead & {
+  holes: CourseHoleRead[];
+};
+
+export type CourseHoleRead = {
+  id: number;
+  hole_number: number;
+  par: number;
+  yardage: number | null;
+  handicap: number | null;
+  tee_name: string;
+};
+
 export type RoundRead = {
   id: number;
   status: RoundStatus;

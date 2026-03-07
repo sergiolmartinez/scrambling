@@ -32,7 +32,7 @@ export function SetupRoute(): JSX.Element {
   const roundId = useRoundSessionStore((state) => state.roundId);
   const setRoundId = useRoundSessionStore((state) => state.setRoundId);
 
-  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [editingPlayerId, setEditingPlayerId] = useState<number | null>(null);
 
@@ -65,8 +65,8 @@ export function SetupRoute(): JSX.Element {
     onError: (error: Error) => setSetupError(error.message),
   });
 
-  const assignCourse = useMutation({
-    mutationFn: (courseId: number) => apiClient.assignCourse(roundId as number, courseId),
+  const importCourse = useMutation({
+    mutationFn: (externalId: string) => apiClient.importCourseToRound(roundId as number, externalId),
     onSuccess: async () => {
       setSetupError(null);
       await queryClient.invalidateQueries({ queryKey: ['round-aggregate', roundId] });
@@ -176,10 +176,7 @@ export function SetupRoute(): JSX.Element {
           ) : null}
 
           {courseSearch.data?.map((course) => (
-            <div
-              className='rounded-md border border-zinc-800 px-3 py-2 text-sm'
-              key={course.id}
-            >
+            <div className='rounded-md border border-zinc-800 px-3 py-2 text-sm' key={course.external_id}>
               <div className='flex items-center justify-between gap-2'>
                 <div>
                   <p className='font-medium'>{course.name}</p>
@@ -189,16 +186,16 @@ export function SetupRoute(): JSX.Element {
                 </div>
                 <Button
                   type='button'
-                  variant={selectedCourseId === course.id ? 'primary' : 'outline'}
+                  variant={selectedCourseId === course.external_id ? 'primary' : 'outline'}
                   onClick={() => {
-                    setSelectedCourseId(course.id);
+                    setSelectedCourseId(course.external_id);
                     if (roundId !== null) {
-                      assignCourse.mutate(course.id);
+                      importCourse.mutate(course.external_id);
                     }
                   }}
-                  disabled={roundId === null || isLocked || assignCourse.isPending}
+                  disabled={roundId === null || isLocked || importCourse.isPending}
                 >
-                  {selectedCourseId === course.id ? 'Selected' : 'Assign'}
+                  {selectedCourseId === course.external_id ? 'Selected' : 'Assign'}
                 </Button>
               </div>
             </div>

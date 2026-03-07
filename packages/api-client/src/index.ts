@@ -1,6 +1,8 @@
 import type {
   ApiErrorResponse,
   CourseRead,
+  ExternalCourseDetailRead,
+  ExternalCourseSearchRead,
   HealthResponse,
   HoleScoreRead,
   LeaderboardEntryRead,
@@ -25,7 +27,9 @@ export type ApiClient = {
   ) => Promise<RoundPlayerRead>;
   deletePlayer: (roundId: number, playerId: number) => Promise<void>;
   assignCourse: (roundId: number, courseId: number) => Promise<RoundRead>;
-  searchCourses: (query: string) => Promise<CourseRead[]>;
+  searchCourses: (query: string) => Promise<ExternalCourseSearchRead[]>;
+  getExternalCourseDetail: (externalId: string) => Promise<ExternalCourseDetailRead>;
+  importCourseToRound: (roundId: number, externalId: string) => Promise<RoundRead>;
   upsertHoleScore: (
     roundId: number,
     holeNumber: number,
@@ -134,9 +138,19 @@ export function createApiClient(baseUrl: string): ApiClient {
         body: JSON.stringify({ course_id: courseId }),
       });
     },
-    async searchCourses(query: string): Promise<CourseRead[]> {
+    async searchCourses(query: string): Promise<ExternalCourseSearchRead[]> {
       const encoded = encodeURIComponent(query);
-      return requestJson<CourseRead[]>(`/courses/search?q=${encoded}`, { method: 'GET' });
+      return requestJson<ExternalCourseSearchRead[]>(`/courses/search?q=${encoded}`, { method: 'GET' });
+    },
+    async getExternalCourseDetail(externalId: string): Promise<ExternalCourseDetailRead> {
+      const encoded = encodeURIComponent(externalId);
+      return requestJson<ExternalCourseDetailRead>(`/courses/external/${encoded}`, { method: 'GET' });
+    },
+    async importCourseToRound(roundId: number, externalId: string): Promise<RoundRead> {
+      return requestJson<RoundRead>(`/rounds/${roundId}/course/import`, {
+        method: 'POST',
+        body: JSON.stringify({ external_id: externalId }),
+      });
     },
     async upsertHoleScore(
       roundId: number,

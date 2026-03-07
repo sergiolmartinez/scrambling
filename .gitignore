@@ -69,6 +69,7 @@ web_modules/
 .env
 .env.*
 !.env.example
+*.local
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -146,6 +147,8 @@ __pycache__/
 *.log
 *.env
 .env
+.pytest_cache/
+.ruff_cache/
 
 # Virtual Envs
 .venv/
