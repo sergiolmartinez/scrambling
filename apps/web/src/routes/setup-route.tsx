@@ -10,6 +10,7 @@ import { ErrorState } from '@/components/state/error-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { ProgressChecklist } from '@/components/ui/progress-checklist';
 import { apiClient } from '@/lib/api';
 import { useRoundSessionStore } from '@/store/round-session';
 
@@ -116,40 +117,55 @@ export function SetupRoute(): JSX.Element {
   const hasAssignedCourse = Boolean(roundAggregate.data?.course);
   const canContinueToScoring = Boolean(roundId && hasAssignedCourse && players.length > 0);
   const isLocked = roundAggregate.data?.round.status === 'completed';
+  const readinessItems = [
+    { label: 'Round', complete: roundId !== null },
+    { label: 'Course', complete: hasAssignedCourse },
+    { label: 'Players', complete: players.length > 0 },
+  ];
+  const primaryAction = canContinueToScoring ? 'continue' : 'create';
+  const roundStatusCopy = getRoundStatusCopy(roundAggregate.data?.round.status, roundId);
 
   return (
     <div className='grid gap-6 lg:grid-cols-2'>
       <Card>
-        <CardTitle>Round Setup</CardTitle>
-        <CardDescription>Create a round, assign course, and configure players.</CardDescription>
+        <CardTitle>Start a round in 3 steps</CardTitle>
+        <CardDescription>Create the round, pick a course, then add players to begin scoring.</CardDescription>
 
-        <div className='mt-4 space-y-3'>
-          <div className='flex flex-wrap gap-2'>
+        <div className='mt-3 space-y-3'>
+          <ProgressChecklist items={readinessItems} />
+
+          <p className='text-sm text-slate-300'>{roundStatusCopy}</p>
+          {isLocked ? (
+            <p className='rounded-md border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-200'>
+              This round is completed and locked. Create a new round to edit setup.
+            </p>
+          ) : null}
+
+          <div className='flex flex-wrap gap-2 sm:gap-3'>
             <Button
               onClick={() => createRound.mutate()}
               type='button'
-              variant='primary'
+              variant={primaryAction === 'create' ? 'primary' : 'outline'}
+              className='min-h-11 flex-1 sm:flex-none'
             >
               Create Round
             </Button>
             <Button
               onClick={() => navigate('/scoring')}
               type='button'
-              variant='outline'
+              variant={primaryAction === 'continue' ? 'primary' : 'outline'}
               disabled={!canContinueToScoring}
+              className='min-h-11 flex-1 sm:flex-none'
             >
               Continue to Scoring
             </Button>
           </div>
 
           {roundId !== null ? (
-            <p className='text-sm text-zinc-300'>Current round ID: {roundId}</p>
+            <p className='text-xs text-zinc-400'>Current round ID: {roundId}</p>
           ) : (
-            <p className='text-sm text-zinc-500'>No round selected yet.</p>
+            <p className='text-xs text-zinc-500'>No round selected yet.</p>
           )}
-          {isLocked ? (
-            <p className='text-sm text-amber-300'>This round is completed and locked. Create a new round to edit setup.</p>
-          ) : null}
 
           {setupError ? <ErrorState message={setupError} /> : null}
         </div>
@@ -157,7 +173,7 @@ export function SetupRoute(): JSX.Element {
 
       <Card>
         <CardTitle>Course Search</CardTitle>
-        <CardDescription>Search and assign a course to the active round.</CardDescription>
+        <CardDescription>Search local + imported courses and assign one to the active round.</CardDescription>
 
         <form className='mt-4 space-y-3' onSubmit={courseSearchForm.handleSubmit(() => undefined)}>
           <Input placeholder='Search courses...' {...courseSearchForm.register('query')} />
@@ -177,7 +193,7 @@ export function SetupRoute(): JSX.Element {
 
           {courseSearch.data?.map((course) => (
             <div
-              className='rounded-md border border-zinc-800 px-3 py-2 text-sm'
+              className='rounded-md border border-slate-700/70 bg-slate-900/50 px-3 py-2 text-sm'
               key={course.id}
             >
               <div className='flex items-center justify-between gap-2'>
@@ -212,7 +228,7 @@ export function SetupRoute(): JSX.Element {
 
       <Card className='lg:col-span-2'>
         <CardTitle>Players</CardTitle>
-        <CardDescription>Add, edit, or remove players before scoring.</CardDescription>
+        <CardDescription>Add, edit, or remove players before scoring. Player order drives leaderboard display.</CardDescription>
 
         <form
           className='mt-4 grid gap-3 md:grid-cols-[2fr_1fr_auto]'
@@ -284,7 +300,7 @@ function PlayerRow({ player, isLocked, editing, setEditing, onEdit, onDelete }: 
 
   if (!editing) {
     return (
-      <div className='flex items-center justify-between gap-2 rounded-md border border-zinc-800 px-3 py-2'>
+      <div className='flex items-center justify-between gap-2 rounded-md border border-slate-700/70 bg-slate-900/50 px-3 py-2'>
         <div>
           <p className='text-sm font-medium'>{player.display_name}</p>
           <p className='text-xs text-zinc-500'>Sort order: {player.sort_order}</p>
@@ -303,7 +319,7 @@ function PlayerRow({ player, isLocked, editing, setEditing, onEdit, onDelete }: 
 
   return (
     <form
-      className='grid gap-2 rounded-md border border-zinc-800 px-3 py-2 md:grid-cols-[2fr_1fr_auto_auto]'
+      className='grid gap-2 rounded-md border border-slate-700/70 bg-slate-900/50 px-3 py-2 md:grid-cols-[2fr_1fr_auto_auto]'
       onSubmit={editForm.handleSubmit((payload) => onEdit(payload))}
     >
       <Input {...editForm.register('display_name')} />
@@ -325,4 +341,23 @@ function PlayerRow({ player, isLocked, editing, setEditing, onEdit, onDelete }: 
 
 function nextSortOrder(currentPlayerCount: number): number {
   return Math.min(4, Math.max(1, currentPlayerCount + 1));
+}
+
+function getRoundStatusCopy(
+  status: 'draft' | 'active' | 'completed' | undefined,
+  roundId: number | null,
+): string {
+  if (roundId === null || status === undefined) {
+    return 'No round yet. Start by creating a new round.';
+  }
+
+  if (status === 'draft') {
+    return 'Round status: Draft. Continue setup by assigning a course and adding players.';
+  }
+
+  if (status === 'active') {
+    return 'Round status: Active. Setup is ready for scoring.';
+  }
+
+  return 'Round status: Completed. This round is read-only.';
 }
