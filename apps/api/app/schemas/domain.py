@@ -52,6 +52,24 @@ class CourseAssignRequest(BaseModel):
     course_id: int
 
 
+class CourseImportRequest(BaseModel):
+    external_id: str = Field(min_length=1, max_length=128)
+
+
+class ExternalCourseSearchRead(BaseModel):
+    external_id: str
+    name: str
+    city: str | None
+    state: str | None
+    country: str | None
+    total_holes: int
+    source: str
+
+
+class ExternalCourseDetailRead(ExternalCourseSearchRead):
+    holes: list[CourseHoleRead]
+
+
 class RoundCreate(BaseModel):
     notes: str | None = Field(default=None, max_length=500)
 
