@@ -226,22 +226,35 @@ export function SetupRoute(): JSX.Element {
             />
           ) : null}
 
-          {shouldShowCourseResults &&
-            courseSearch.data?.map((course) => (
-            <CourseResultCard
-              key={course.external_id}
-              course={course}
-              isAssigned={roundAggregate.data?.course?.external_course_id === course.external_id}
-              isAssigning={importCourse.isPending && selectedCourseId === course.external_id}
-              disabled={roundId === null || isLocked}
-              onAssign={() => {
-                setSelectedCourseId(course.external_id);
-                if (roundId !== null) {
-                  importCourse.mutate(course.external_id);
-                }
-              }}
-            />
-            ))}
+          {courseSearch.data?.map((course) => (
+            <div className='rounded-md border border-zinc-800 px-3 py-2 text-sm' key={course.external_id}>
+              <div className='flex items-center justify-between gap-2'>
+                <div>
+                  <p className='font-medium'>{course.name}</p>
+                  <p className='text-zinc-400'>
+                    {course.city ?? 'Unknown city'}, {course.state ?? 'Unknown state'}
+                  </p>
+                </div>
+                <Button
+                  type='button'
+                  variant={selectedCourseId === course.external_id ? 'primary' : 'outline'}
+                  onClick={() => {
+                    setSelectedCourseId(course.external_id);
+                    if (roundId !== null) {
+                      importCourse.mutate(course.external_id);
+                    }
+                  }}
+                  disabled={roundId === null || isLocked || importCourse.isPending}
+                >
+                  {selectedCourseId === course.external_id ? 'Selected' : 'Assign'}
+                </Button>
+              </div>
+            </div>
+          ))}
+
+          {roundAggregate.data?.course ? (
+            <p className='text-sm text-cyan-300'>Assigned course: {roundAggregate.data.course.name}</p>
+          ) : null}
         </div>
       </Card>
 

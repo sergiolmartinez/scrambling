@@ -11,6 +11,7 @@
 - `GET /health`
 - `POST /courses`
 - `GET /courses/search`
+- `GET /courses/external/{external_id}`
 - `GET /courses/{course_id}`
 - `POST /rounds`
 - `GET /rounds/{round_id}`
@@ -18,6 +19,7 @@
 - `PATCH /rounds/{round_id}/players/{player_id}`
 - `DELETE /rounds/{round_id}/players/{player_id}`
 - `POST /rounds/{round_id}/course`
+- `POST /rounds/{round_id}/course/import`
 - `PUT /rounds/{round_id}/holes/{hole_number}`
 - `POST /rounds/{round_id}/holes/{hole_number}/shots`
 - `GET /rounds/{round_id}/holes/{hole_number}/shots`
@@ -66,21 +68,37 @@ Remove a player if the round is not completed.
 ### Courses
 
 #### `GET /courses/search`
-Search courses by text query.
+Search courses by text query via backend-managed provider integration.
 
 Query params:
 - `q`
 - optional location parameters later
 - `q` must be at least 2 non-whitespace characters
 
+Response is a normalized lightweight external course list with `external_id`.
+
+#### `GET /courses/external/{external_id}`
+Get normalized external course detail with hole data.
+
 #### `GET /courses/{course_id}`
 Get course detail with holes.
+
+Behavior:
+- returns local snapshot data.
+- for `source=golfcourseapi`, if no `course_holes` exist yet, backend performs one lazy provider fetch, snapshots holes, updates `imported_at`, then returns the hydrated local snapshot.
+- if holes already exist, no provider request is made.
 
 #### `POST /rounds/{round_id}/course`
 Assign a course to a round.
 
 Body:
 - `course_id`
+
+#### `POST /rounds/{round_id}/course/import`
+Import external course snapshot and assign to round.
+
+Body:
+- `external_id`
 
 ### Hole scoring
 

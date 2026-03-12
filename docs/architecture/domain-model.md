@@ -10,12 +10,14 @@ Suggested fields:
 
 - id
 - external_course_id nullable
+- external_payload_hash nullable
 - name
 - city nullable
 - state nullable
 - country nullable
 - total_holes
 - source
+- imported_at nullable
 - created_at
 - updated_at
 
@@ -113,6 +115,8 @@ Constraints:
 3. A hole score is unique per round and hole.
 4. The same player cannot be recorded twice on the same hole and shot.
 5. Contribution tallies are derived from `ShotContribution`, not stored redundantly.
+6. Imported external courses are deduplicated by unique `(source, external_course_id)`.
+7. `external_course_id` stays nullable for manual courses (`source=manual`).
 
 ## Derived views
 

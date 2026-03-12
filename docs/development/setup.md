@@ -13,14 +13,20 @@
 
 ## Suggested environment files
 
-### `apps/api/.env`
+### API `.env` (repo root `.env` or `apps/api/.env`)
 
 ```env
 APP_ENV=development
 API_V1_PREFIX=/api/v1
 DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/scrambling
 CORS_ORIGINS=http://localhost:5173
+GOLFCOURSEAPI_BASE_URL=https://api.golfcourseapi.com
+GOLFCOURSEAPI_API_KEY=<set-local-only>
+GOLFCOURSEAPI_TIMEOUT_SECONDS=10
+GOLFCOURSEAPI_CACHE_TTL_SECONDS=300
 ```
+
+Note: API settings load env vars from both `.env` and `apps/api/.env`. Either location is valid for local development.
 
 ### `apps/web/.env`
 

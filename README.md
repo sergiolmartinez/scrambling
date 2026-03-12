@@ -44,6 +44,11 @@ python -m venv .venv
 pip install -r apps/api/requirements.txt
 ```
 
+Create environment files:
+
+- `apps/api/.env` from `apps/api/.env.example`
+- `apps/web/.env` from `apps/web/.env.example`
+
 ## Run
 
 ### Web
@@ -87,3 +92,10 @@ Use the MVP release checklist before cutting a release:
 
 - `docs/plan/next-priorities-roadmap.md`: implementation sequence for UI iteration, auth/login, and player invites
 - `docs/plan/milestone-plan.md`: extended milestones for post-MVP evolution
+## Architecture pointers
+
+- API contract: `docs/architecture/api-contract.md`
+- Domain model: `docs/architecture/domain-model.md`
+- Integration details: `docs/integrations/golfcourseapi.md`
+
+Course search/detail always flows through backend integration and snapshots imported provider data locally.
