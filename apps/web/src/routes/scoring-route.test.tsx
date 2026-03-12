@@ -176,4 +176,55 @@ describe('ScoringRoute', () => {
 
     await waitFor(() => expect(mocks.completeRound).toHaveBeenCalledWith(99));
   });
+
+  it('resets completed checkbox when navigating to a hole without score state', async () => {
+    renderScoring();
+
+    await waitFor(() => expect(screen.getByText(/hole 1 of 3/i)).toBeInTheDocument());
+
+    const completedCheckbox = screen.getByRole('checkbox', {
+      name: /mark hole as completed/i,
+    }) as HTMLInputElement;
+    fireEvent.click(completedCheckbox);
+    expect(completedCheckbox.checked).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: /next hole/i }));
+
+    await waitFor(() => expect(screen.getByText(/hole 2 of 3/i)).toBeInTheDocument());
+
+    const holeTwoCheckbox = screen.getByRole('checkbox', {
+      name: /mark hole as completed/i,
+    }) as HTMLInputElement;
+    expect(holeTwoCheckbox.checked).toBe(false);
+  });
+
+  it('preserves saved completion state when navigating back to a previously saved hole', async () => {
+    renderScoring();
+
+    await waitFor(() => expect(screen.getByText(/hole 1 of 3/i)).toBeInTheDocument());
+
+    fireEvent.change(screen.getByPlaceholderText('Score'), { target: { value: '4' } });
+    fireEvent.change(screen.getByPlaceholderText('Par snapshot'), { target: { value: '4' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: /mark hole as completed/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save hole score/i }));
+
+    await waitFor(() =>
+      expect(mocks.upsertHoleScore).toHaveBeenCalledWith(99, 1, {
+        score: 4,
+        par_snapshot: 4,
+        completed: true,
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /next hole/i }));
+    await waitFor(() => expect(screen.getByText(/hole 2 of 3/i)).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /previous hole/i }));
+    await waitFor(() => expect(screen.getByText(/hole 1 of 3/i)).toBeInTheDocument());
+
+    const completedCheckbox = screen.getByRole('checkbox', {
+      name: /mark hole as completed/i,
+    }) as HTMLInputElement;
+    expect(completedCheckbox.checked).toBe(true);
+  });
 });

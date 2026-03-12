@@ -5,6 +5,9 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
+import { HoleHeader } from '@/components/scoring/hole-header';
+import { SaveStatusBadge } from '@/components/scoring/save-status-badge';
+import { StickyActionBar } from '@/components/scoring/sticky-action-bar';
 import { EmptyState } from '@/components/state/empty-state';
 import { ErrorState } from '@/components/state/error-state';
 import { LoadingState } from '@/components/state/loading-state';
@@ -41,6 +44,9 @@ export function ScoringRoute(): JSX.Element {
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
   const [scoreError, setScoreError] = useState<string | null>(null);
   const [contributionError, setContributionError] = useState<string | null>(null);
+  const [scoreSavedAt, setScoreSavedAt] = useState<number | null>(null);
+  const [contributionSavedAt, setContributionSavedAt] = useState<number | null>(null);
+  const [savedHoleState, setSavedHoleState] = useState<Record<number, HoleScoreFormValues>>({});
 
   const totalHoles = aggregate.data?.course?.total_holes ?? 18;
 
@@ -49,6 +55,10 @@ export function ScoringRoute(): JSX.Element {
       setCurrentHole(totalHoles);
     }
   }, [currentHole, totalHoles]);
+
+  useEffect(() => {
+    setSavedHoleState({});
+  }, [roundId]);
 
   const holeContributions = useQuery({
     queryKey: ['hole-contributions', roundId, currentHole],
@@ -67,12 +77,13 @@ export function ScoringRoute(): JSX.Element {
   });
 
   useEffect(() => {
+    const localSaved = savedHoleState[currentHole];
     scoreForm.reset({
-      score: currentHoleScore?.score ?? null,
-      par_snapshot: currentHoleScore?.par_snapshot ?? null,
-      completed: currentHoleScore?.completed ?? false,
+      score: localSaved?.score ?? currentHoleScore?.score ?? null,
+      par_snapshot: localSaved?.par_snapshot ?? currentHoleScore?.par_snapshot ?? null,
+      completed: localSaved?.completed ?? currentHoleScore?.completed ?? false,
     });
-  }, [currentHoleScore, scoreForm]);
+  }, [currentHole, currentHoleScore, savedHoleState, scoreForm]);
 
   const contributionForm = useForm<ContributionFormValues>({
     resolver: zodResolver(contributionSchema),
@@ -88,8 +99,17 @@ export function ScoringRoute(): JSX.Element {
       };
       return apiClient.upsertHoleScore(roundId as number, currentHole, normalized);
     },
-    onSuccess: async () => {
+    onSuccess: async (saved) => {
       setScoreError(null);
+      setScoreSavedAt(Date.now());
+      setSavedHoleState((previous) => ({
+        ...previous,
+        [currentHole]: {
+          score: saved.score ?? null,
+          par_snapshot: saved.par_snapshot ?? null,
+          completed: saved.completed,
+        },
+      }));
       await queryClient.invalidateQueries({ queryKey: ['round-aggregate', roundId] });
     },
     onError: (error: Error) => setScoreError(error.message),
@@ -104,6 +124,7 @@ export function ScoringRoute(): JSX.Element {
       }),
     onSuccess: async () => {
       setContributionError(null);
+      setContributionSavedAt(Date.now());
       setSelectedPlayerIds([]);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['round-aggregate', roundId] }),
@@ -119,6 +140,7 @@ export function ScoringRoute(): JSX.Element {
       apiClient.deleteContribution(roundId as number, currentHole, payload.shotNumber, payload.playerId),
     onSuccess: async () => {
       setContributionError(null);
+      setContributionSavedAt(Date.now());
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['round-aggregate', roundId] }),
         queryClient.invalidateQueries({ queryKey: ['hole-contributions', roundId, currentHole] }),
@@ -170,21 +192,31 @@ export function ScoringRoute(): JSX.Element {
   const holesCompleted = aggregate.data.hole_scores.filter((score) => score.completed).length;
   const groupedContributions = groupContributionsByShot(holeContributions.data ?? []);
   const isLocked = aggregate.data.round.status === 'completed';
+  const isSyncing =
+    upsertHoleScore.isPending ||
+    addContributions.isPending ||
+    deleteContribution.isPending ||
+    holeContributions.isFetching;
 
   return (
     <div className='space-y-6'>
       <Card>
-        <CardTitle>Live Scoring</CardTitle>
-        <CardDescription>
-          Hole {currentHole} of {totalHoles} on {aggregate.data.course.name}
-        </CardDescription>
+        <HoleHeader
+          currentHole={currentHole}
+          totalHoles={totalHoles}
+          courseName={aggregate.data.course.name}
+          roundStatus={aggregate.data.round.status}
+          holeCompleted={currentHoleScore?.completed ?? false}
+          parSnapshot={currentHoleScore?.par_snapshot ?? null}
+        />
 
-        <div className='mt-4 flex flex-wrap items-center gap-2'>
+        <div className='mt-4 flex flex-wrap items-center gap-2 sm:gap-3'>
           <Button
             type='button'
             variant='outline'
             onClick={() => setCurrentHole((value) => Math.max(1, value - 1))}
             disabled={currentHole <= 1}
+            className='min-h-11'
           >
             Previous Hole
           </Button>
@@ -193,33 +225,40 @@ export function ScoringRoute(): JSX.Element {
             variant='outline'
             onClick={() => setCurrentHole((value) => Math.min(totalHoles, value + 1))}
             disabled={currentHole >= totalHoles}
+            className='min-h-11'
           >
             Next Hole
           </Button>
+          <SaveStatusBadge
+            isSaving={isSyncing}
+            error={scoreError ?? contributionError}
+            savedAt={Math.max(scoreSavedAt ?? 0, contributionSavedAt ?? 0) || null}
+            idleLabel='Waiting for changes'
+          />
           <Button
             type='button'
             variant='primary'
             onClick={() => completeRound.mutate()}
             disabled={isLocked || completeRound.isPending}
+            className='min-h-11 sm:ml-auto'
           >
-            Complete Round
+            {completeRound.isPending ? 'Completing...' : 'Complete Round'}
           </Button>
-          <span className='text-sm text-zinc-400'>Round status: {aggregate.data.round.status}</span>
         </div>
 
-        <div className='mt-4 grid gap-3 text-sm md:grid-cols-3'>
-          <div className='rounded-md border border-zinc-800 px-3 py-2'>
-            <p className='text-zinc-400'>Running score</p>
+        <div className='mt-4 grid gap-3 text-sm sm:grid-cols-3'>
+          <div className='rounded-md border border-slate-700/70 bg-slate-900/40 px-3 py-2'>
+            <p className='text-slate-400'>Running score</p>
             <p className='text-lg font-semibold'>{holeScoreTotal}</p>
           </div>
-          <div className='rounded-md border border-zinc-800 px-3 py-2'>
-            <p className='text-zinc-400'>Holes completed</p>
+          <div className='rounded-md border border-slate-700/70 bg-slate-900/40 px-3 py-2'>
+            <p className='text-slate-400'>Holes completed</p>
             <p className='text-lg font-semibold'>
               {holesCompleted}/{totalHoles}
             </p>
           </div>
-          <div className='rounded-md border border-zinc-800 px-3 py-2'>
-            <p className='text-zinc-400'>Contributions on hole</p>
+          <div className='rounded-md border border-slate-700/70 bg-slate-900/40 px-3 py-2'>
+            <p className='text-slate-400'>Contributions on hole</p>
             <p className='text-lg font-semibold'>{holeContributions.data?.length ?? 0}</p>
           </div>
         </div>
@@ -227,31 +266,37 @@ export function ScoringRoute(): JSX.Element {
 
       <Card>
         <CardTitle>Hole {currentHole} Score</CardTitle>
-        <CardDescription>Create or update score details for the current hole.</CardDescription>
+        <CardDescription>Capture score and hole completion for the current hole.</CardDescription>
 
         <form
-          className='mt-4 grid gap-3 sm:grid-cols-3'
+          className='mt-4 grid gap-3'
           onSubmit={scoreForm.handleSubmit((values) => upsertHoleScore.mutate(values))}
         >
-          <Input
-            type='number'
-            min={1}
-            max={20}
-            disabled={isLocked}
-            placeholder='Score'
-            {...scoreForm.register('score', { setValueAs: toNullableNumber })}
-          />
-          <Input
-            type='number'
-            min={1}
-            max={10}
-            disabled={isLocked}
-            placeholder='Par snapshot'
-            {...scoreForm.register('par_snapshot', { setValueAs: toNullableNumber })}
-          />
-          <Button type='submit' variant='primary' disabled={isLocked || upsertHoleScore.isPending}>
-            Save Hole Score
-          </Button>
+          <div className='grid gap-3 sm:grid-cols-2'>
+            <Input
+              type='number'
+              min={1}
+              max={20}
+              disabled={isLocked}
+              placeholder='Score'
+              {...scoreForm.register('score', { setValueAs: toNullableNumber })}
+            />
+            <Input
+              type='number'
+              min={1}
+              max={10}
+              disabled={isLocked}
+              placeholder='Par snapshot'
+              {...scoreForm.register('par_snapshot', { setValueAs: toNullableNumber })}
+            />
+          </div>
+
+          <div className='flex flex-wrap items-center gap-2'>
+            <Button type='submit' variant='primary' disabled={isLocked || upsertHoleScore.isPending} className='min-h-11'>
+              {upsertHoleScore.isPending ? 'Saving...' : 'Save Hole Score'}
+            </Button>
+            <SaveStatusBadge isSaving={upsertHoleScore.isPending} error={scoreError} savedAt={scoreSavedAt} idleLabel='No score changes yet' />
+          </div>
 
           <label className='col-span-full flex items-center gap-2 text-sm text-zinc-300'>
             <input className='h-4 w-4' disabled={isLocked} type='checkbox' {...scoreForm.register('completed')} />
@@ -260,9 +305,11 @@ export function ScoringRoute(): JSX.Element {
         </form>
 
         {isLocked ? (
-          <p className='mt-2 text-sm text-zinc-400'>Round is completed and locked for edits.</p>
+          <p className='mt-2 rounded-md border border-slate-700/70 bg-slate-900/40 px-3 py-2 text-sm text-zinc-400'>
+            Round is completed and locked for edits.
+          </p>
         ) : null}
-        {scoreError ? <p className='mt-2 text-sm text-rose-300'>{scoreError}</p> : null}
+        {scoreError ? <p className='mt-2 rounded-md border border-rose-300/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200'>{scoreError}</p> : null}
       </Card>
 
       <Card>
@@ -290,7 +337,11 @@ export function ScoringRoute(): JSX.Element {
               const selected = selectedPlayerIds.includes(player.id);
               return (
                 <label
-                  className='flex cursor-pointer items-center justify-between rounded-md border border-zinc-800 px-3 py-2 text-sm'
+                  className={`flex cursor-pointer items-center justify-between rounded-md border px-3 py-2 text-sm ${
+                    selected
+                      ? 'border-cyan-300/50 bg-cyan-400/10 text-cyan-100'
+                      : 'border-zinc-800 bg-slate-900/35'
+                  }`}
                   key={player.id}
                 >
                   <span>{player.display_name}</span>
@@ -314,16 +365,31 @@ export function ScoringRoute(): JSX.Element {
           <Button
             type='submit'
             variant='primary'
+            className='min-h-11 sm:max-w-xs'
             disabled={isLocked || addContributions.isPending || selectedPlayerIds.length === 0}
           >
-            Add Contributions
+            {addContributions.isPending ? 'Saving Contributions...' : 'Add Contributions'}
           </Button>
+          <SaveStatusBadge
+            isSaving={addContributions.isPending || deleteContribution.isPending}
+            error={contributionError}
+            savedAt={contributionSavedAt}
+            idleLabel='No contribution changes yet'
+          />
         </form>
 
-        {contributionError ? <p className='mt-2 text-sm text-rose-300'>{contributionError}</p> : null}
+        {contributionError ? (
+          <p className='mt-2 rounded-md border border-rose-300/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200'>
+            {contributionError}
+          </p>
+        ) : null}
 
         <div className='mt-4 space-y-2'>
-          {holeContributions.isPending ? <LoadingState title='Hole Contributions' /> : null}
+          {holeContributions.isPending ? (
+            <div className='rounded-md border border-sky-300/30 bg-sky-400/10 px-3 py-2 text-sm text-sky-100'>
+              Loading contributions...
+            </div>
+          ) : null}
           {holeContributions.isError ? (
             <ErrorState message='Failed to load contributions for this hole.' />
           ) : null}
@@ -332,7 +398,7 @@ export function ScoringRoute(): JSX.Element {
           ) : null}
 
           {groupedContributions.map((group) => (
-            <div className='rounded-md border border-zinc-800 px-3 py-2' key={group.shotNumber}>
+            <div className='rounded-md border border-zinc-800 bg-slate-900/35 px-3 py-2' key={group.shotNumber}>
               <p className='text-sm font-medium'>Shot {group.shotNumber}</p>
               <div className='mt-2 space-y-2'>
                 {group.rows.map((row) => (
@@ -344,7 +410,7 @@ export function ScoringRoute(): JSX.Element {
                     <Button
                       type='button'
                       variant='outline'
-                      disabled={isLocked}
+                      disabled={isLocked || deleteContribution.isPending}
                       onClick={() =>
                         deleteContribution.mutate({
                           shotNumber: row.shot_number,
@@ -380,6 +446,27 @@ export function ScoringRoute(): JSX.Element {
           ))}
         </ol>
       </Card>
+
+      <StickyActionBar>
+        <Button
+          type='button'
+          variant='outline'
+          onClick={() => setCurrentHole((value) => Math.max(1, value - 1))}
+          disabled={currentHole <= 1}
+          className='min-h-11 flex-1'
+        >
+          Prev
+        </Button>
+        <Button
+          type='button'
+          variant='primary'
+          onClick={() => setCurrentHole((value) => Math.min(totalHoles, value + 1))}
+          disabled={currentHole >= totalHoles}
+          className='min-h-11 flex-1'
+        >
+          Next
+        </Button>
+      </StickyActionBar>
     </div>
   );
 }

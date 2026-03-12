@@ -36,7 +36,7 @@ export function SetupRoute(): JSX.Element {
   const roundId = useRoundSessionStore((state) => state.roundId);
   const setRoundId = useRoundSessionStore((state) => state.setRoundId);
 
-  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [editingPlayerId, setEditingPlayerId] = useState<number | null>(null);
 
@@ -69,10 +69,12 @@ export function SetupRoute(): JSX.Element {
     onError: (error: Error) => setSetupError(error.message),
   });
 
-  const assignCourse = useMutation({
-    mutationFn: (courseId: number) => apiClient.assignCourse(roundId as number, courseId),
+  const importCourse = useMutation({
+    mutationFn: (externalId: string) => apiClient.importCourseToRound(roundId as number, externalId),
     onSuccess: async () => {
       setSetupError(null);
+      setSelectedCourseId(null);
+      courseSearchForm.reset({ query: '' });
       await queryClient.invalidateQueries({ queryKey: ['round-aggregate', roundId] });
     },
     onError: (error: Error) => setSetupError(error.message),
@@ -114,13 +116,13 @@ export function SetupRoute(): JSX.Element {
     queryFn: () => apiClient.searchCourses(searchQuery),
     enabled: searchQuery.length >= 2,
   });
+  const shouldShowCourseResults = searchQuery.length >= 2;
 
   const players = roundAggregate.data?.players ?? [];
   const maxPlayersReached = players.length >= 4;
   const hasAssignedCourse = Boolean(roundAggregate.data?.course);
   const canContinueToScoring = Boolean(roundId && hasAssignedCourse && players.length > 0);
   const isLocked = roundAggregate.data?.round.status === 'completed';
-  const assignedCourseId = roundAggregate.data?.course?.id ?? null;
   const readinessItems = [
     { label: 'Round', complete: roundId !== null },
     { label: 'Course', complete: hasAssignedCourse },
@@ -207,36 +209,39 @@ export function SetupRoute(): JSX.Element {
         <div className='mt-4 space-y-3'>
           {roundAggregate.data?.course ? <SelectedCourseBanner course={roundAggregate.data.course} /> : null}
 
-          {courseSearch.isLoading ? (
+          {shouldShowCourseResults && courseSearch.isLoading ? (
             <div className='rounded-xl border border-sky-300/25 bg-sky-400/10 px-3 py-2 text-sm text-sky-100'>
               Searching courses...
             </div>
           ) : null}
 
-          {courseSearch.isError ? <ErrorState message='Course search failed. Try a different query.' /> : null}
+          {shouldShowCourseResults && courseSearch.isError ? (
+            <ErrorState message='Course search failed. Try a different query.' />
+          ) : null}
 
-          {courseSearch.isSuccess && courseSearch.data.length === 0 ? (
+          {shouldShowCourseResults && courseSearch.isSuccess && courseSearch.data.length === 0 ? (
             <EmptyState
               title='No courses found'
               description='Try a different search term or import additional courses first.'
             />
           ) : null}
 
-          {courseSearch.data?.map((course) => (
+          {shouldShowCourseResults &&
+            courseSearch.data?.map((course) => (
             <CourseResultCard
-              key={course.id}
+              key={course.external_id}
               course={course}
-              isAssigned={assignedCourseId === course.id}
-              isAssigning={assignCourse.isPending && selectedCourseId === course.id}
+              isAssigned={roundAggregate.data?.course?.external_course_id === course.external_id}
+              isAssigning={importCourse.isPending && selectedCourseId === course.external_id}
               disabled={roundId === null || isLocked}
               onAssign={() => {
-                setSelectedCourseId(course.id);
+                setSelectedCourseId(course.external_id);
                 if (roundId !== null) {
-                  assignCourse.mutate(course.id);
+                  importCourse.mutate(course.external_id);
                 }
               }}
             />
-          ))}
+            ))}
         </div>
       </Card>
 

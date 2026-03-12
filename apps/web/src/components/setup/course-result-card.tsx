@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 
 type CourseResultCardProps = {
   course: {
-    id: number;
+    external_id: string;
     name: string;
     city: string | null;
     state: string | null;
