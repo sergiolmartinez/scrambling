@@ -1,3 +1,5 @@
+import { MapPinIcon } from '@/components/ui/icons';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 
 type CourseResultCardProps = {
@@ -22,16 +24,17 @@ export function CourseResultCard({
   onAssign,
 }: CourseResultCardProps): JSX.Element {
   return (
-    <article className='rounded-xl border border-slate-700/70 bg-slate-900/55 p-3'>
+    <article className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-3'>
       <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
-          <p className='truncate text-sm font-semibold text-slate-100'>{course.name}</p>
-          <p className='text-xs text-slate-400'>
-            {course.city ?? 'Unknown city'}, {course.state ?? 'Unknown state'}
+          <p className='truncate text-sm font-semibold text-[var(--color-text)]'>{course.name}</p>
+          <p className='mt-1 inline-flex items-center gap-1 text-xs text-[var(--color-text-muted)]'>
+            <MapPinIcon className='h-3.5 w-3.5 shrink-0' />
+            {course.city ?? 'City unknown'}, {course.state ?? 'State unknown'}
           </p>
-          <span className='mt-2 inline-flex rounded-full border border-cyan-300/40 bg-cyan-400/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-cyan-200'>
-            {course.source}
-          </span>
+          <StatusBadge tone='info' className='mt-2 uppercase tracking-wide'>
+            {formatSource(course.source)}
+          </StatusBadge>
         </div>
         <Button
           type='button'
@@ -45,4 +48,16 @@ export function CourseResultCard({
       </div>
     </article>
   );
+}
+
+function formatSource(source: string): string {
+  if (source === 'golfcourseapi') {
+    return 'Imported';
+  }
+
+  if (source === 'snapshot') {
+    return 'Snapshot';
+  }
+
+  return 'Saved';
 }

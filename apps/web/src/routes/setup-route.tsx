@@ -5,14 +5,17 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
+import { CourseResultCard } from '@/components/setup/course-result-card';
 import { PlayersCountBadge } from '@/components/setup/players-count-badge';
 import { SelectedCourseBanner } from '@/components/setup/selected-course-banner';
 import { EmptyState } from '@/components/state/empty-state';
 import { ErrorState } from '@/components/state/error-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card';
+import { FlagIcon, MapPinIcon, UsersIcon } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { ProgressChecklist } from '@/components/ui/progress-checklist';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { apiClient } from '@/lib/api';
 import { useRoundSessionStore } from '@/store/round-session';
 
@@ -38,6 +41,7 @@ export function SetupRoute(): JSX.Element {
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [editingPlayerId, setEditingPlayerId] = useState<number | null>(null);
+  const [courseNotice, setCourseNotice] = useState<string | null>(null);
 
   const courseSearchForm = useForm<CourseSearchForm>({
     resolver: zodResolver(courseSearchSchema),
@@ -63,20 +67,23 @@ export function SetupRoute(): JSX.Element {
     onSuccess: async (created) => {
       setRoundId(created.id);
       setSetupError(null);
+      setCourseNotice(null);
       await queryClient.invalidateQueries({ queryKey: ['round-aggregate', created.id] });
     },
-    onError: (error: Error) => setSetupError(error.message),
+    onError: () => setSetupError("Couldn't start your round. Please try again."),
   });
 
   const importCourse = useMutation({
     mutationFn: (externalId: string) => apiClient.importCourseToRound(roundId as number, externalId),
-    onSuccess: async () => {
+    onSuccess: async (_, externalId) => {
       setSetupError(null);
       setSelectedCourseId(null);
+      const assignedCourse = courseSearch.data?.find((course) => course.external_id === externalId);
+      setCourseNotice(assignedCourse ? `${assignedCourse.name} is ready for this round.` : 'Course selected.');
       courseSearchForm.reset({ query: '' });
       await queryClient.invalidateQueries({ queryKey: ['round-aggregate', roundId] });
     },
-    onError: (error: Error) => setSetupError(error.message),
+    onError: () => setSetupError("Couldn't add that course. Please try another one."),
   });
 
   const addPlayer = useMutation({
@@ -86,7 +93,7 @@ export function SetupRoute(): JSX.Element {
       playerForm.reset({ display_name: '', sort_order: nextSortOrder(roundAggregate.data?.players.length ?? 0) });
       await queryClient.invalidateQueries({ queryKey: ['round-aggregate', roundId] });
     },
-    onError: (error: Error) => setSetupError(error.message),
+    onError: () => setSetupError("Couldn't add that player. Please try again."),
   });
 
   const updatePlayer = useMutation({
@@ -97,7 +104,7 @@ export function SetupRoute(): JSX.Element {
       setEditingPlayerId(null);
       await queryClient.invalidateQueries({ queryKey: ['round-aggregate', roundId] });
     },
-    onError: (error: Error) => setSetupError(error.message),
+    onError: () => setSetupError("Couldn't save those player changes. Please try again."),
   });
 
   const deletePlayer = useMutation({
@@ -106,7 +113,7 @@ export function SetupRoute(): JSX.Element {
       setSetupError(null);
       await queryClient.invalidateQueries({ queryKey: ['round-aggregate', roundId] });
     },
-    onError: (error: Error) => setSetupError(error.message),
+    onError: () => setSetupError("Couldn't remove that player. Please try again."),
   });
 
   const searchQuery = courseSearchForm.watch('query');
@@ -128,7 +135,7 @@ export function SetupRoute(): JSX.Element {
     { label: 'Players', complete: players.length > 0 },
   ];
   const primaryAction = canContinueToScoring ? 'continue' : 'create';
-  const roundStatusCopy = getRoundStatusCopy(roundAggregate.data?.round.status, roundId);
+  const roundStatus = getRoundStatus(roundAggregate.data?.round.status, roundId);
 
   useEffect(() => {
     const currentName = playerForm.getValues('display_name').trim();
@@ -144,18 +151,26 @@ export function SetupRoute(): JSX.Element {
   }, [playerForm, players.length]);
 
   return (
-    <div className='grid gap-6 lg:grid-cols-2'>
-      <Card>
-        <CardTitle>Start a round in 3 steps</CardTitle>
-        <CardDescription>Create the round, pick a course, then add players to begin scoring.</CardDescription>
+    <div className='grid gap-5 lg:grid-cols-2'>
+      <Card className='lg:col-span-2'>
+        <CardTitle>
+          <span className='inline-flex items-center gap-2'>
+            <FlagIcon className='h-5 w-5 text-[var(--color-primary)]' />
+            Start your round
+          </span>
+        </CardTitle>
+        <CardDescription>Three quick steps: start the round, pick a course, and add your players.</CardDescription>
 
-        <div className='mt-3 space-y-3'>
+        <div className='mt-4 space-y-4'>
           <ProgressChecklist items={readinessItems} />
+          <div className='flex flex-wrap items-center gap-2'>
+            <StatusBadge tone={roundStatus.tone}>{roundStatus.label}</StatusBadge>
+            <p className='text-sm text-[var(--color-text-muted)]'>{roundStatus.copy}</p>
+          </div>
 
-          <p className='text-sm text-slate-300'>{roundStatusCopy}</p>
           {isLocked ? (
-            <p className='rounded-md border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-200'>
-              This round is completed and locked. Create a new round to edit setup.
+            <p className='rounded-md border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] px-3 py-2 text-sm text-[var(--color-warning-text)]'>
+              This round is complete and locked. Start a new round to make setup changes.
             </p>
           ) : null}
 
@@ -166,7 +181,7 @@ export function SetupRoute(): JSX.Element {
               variant={primaryAction === 'create' ? 'primary' : 'outline'}
               className='min-h-11 flex-1 sm:flex-none'
             >
-              Create Round
+              Start Round
             </Button>
             <Button
               onClick={() => navigate('/scoring')}
@@ -179,106 +194,92 @@ export function SetupRoute(): JSX.Element {
             </Button>
           </div>
 
-          {roundId !== null ? (
-            <p className='text-xs text-zinc-400'>Current round ID: {roundId}</p>
-          ) : (
-            <p className='text-xs text-zinc-500'>No round selected yet.</p>
-          )}
-
           {setupError ? <ErrorState message={setupError} /> : null}
         </div>
       </Card>
 
       <Card>
-        <CardTitle>Course Search</CardTitle>
+        <CardTitle>
+          <span className='inline-flex items-center gap-2'>
+            <MapPinIcon className='h-5 w-5 text-[var(--color-primary)]' />
+            Choose a course
+          </span>
+        </CardTitle>
         <CardDescription>
-          Search local and imported courses, then assign one to this round. Assignment is saved immediately.
+          Search by course name or city, then select one for this round.
         </CardDescription>
 
         <form className='mt-4 space-y-3' onSubmit={courseSearchForm.handleSubmit(() => undefined)}>
-          <Input placeholder='Search by course or city...' {...courseSearchForm.register('query')} />
+          <Input placeholder='Search courses or cities...' {...courseSearchForm.register('query')} />
           {courseSearchForm.formState.errors.query ? (
             <p className='text-sm text-rose-300'>{courseSearchForm.formState.errors.query.message}</p>
           ) : null}
           {!courseSearchForm.formState.errors.query && searchQuery.length < 2 ? (
-            <p className='text-xs text-slate-400'>Type at least 2 characters to search available courses.</p>
+            <p className='text-xs text-[var(--color-text-muted)]'>Type at least 2 characters to start searching.</p>
           ) : null}
         </form>
 
         <div className='mt-4 space-y-3'>
           {roundAggregate.data?.course ? <SelectedCourseBanner course={roundAggregate.data.course} /> : null}
+          {courseNotice ? <StatusBadge tone='success'>{courseNotice}</StatusBadge> : null}
+          {roundId === null ? (
+            <StatusBadge tone='neutral'>Start a round before choosing a course.</StatusBadge>
+          ) : null}
 
           {shouldShowCourseResults && courseSearch.isLoading ? (
-            <div className='rounded-xl border border-sky-300/25 bg-sky-400/10 px-3 py-2 text-sm text-sky-100'>
+            <div className='rounded-xl border border-[var(--color-info-border)] bg-[var(--color-info-bg)] px-3 py-2 text-sm text-[var(--color-info-text)]'>
               Searching courses...
             </div>
           ) : null}
 
           {shouldShowCourseResults && courseSearch.isError ? (
-            <ErrorState message='Course search failed. Try a different query.' />
+            <ErrorState message="Couldn't load courses right now. Try again in a moment." />
           ) : null}
 
           {shouldShowCourseResults && courseSearch.isSuccess && courseSearch.data.length === 0 ? (
-            <EmptyState
-              title='No courses found'
-              description='Try a different search term or import additional courses first.'
+            <EmptyState title='No matches yet' description='Try a different course name or city.' />
+          ) : null}
+
+          {courseSearch.data?.map((course, index) => (
+            <CourseResultCard
+              key={`${course.external_id}-${course.name}-${index}`}
+              course={course}
+              isAssigned={selectedCourseId === course.external_id}
+              isAssigning={importCourse.isPending}
+              disabled={roundId === null || isLocked}
+              onAssign={() => {
+                setSelectedCourseId(course.external_id);
+                if (roundId !== null) {
+                  importCourse.mutate(course.external_id);
+                }
+              }}
             />
-          ) : null}
-
-          {courseSearch.data?.map((course) => (
-            <div className='rounded-md border border-zinc-800 px-3 py-2 text-sm' key={course.external_id}>
-              <div className='flex items-center justify-between gap-2'>
-                <div>
-                  <p className='font-medium'>{course.name}</p>
-                  <p className='text-zinc-400'>
-                    {course.city ?? 'Unknown city'}, {course.state ?? 'Unknown state'}
-                  </p>
-                </div>
-                <Button
-                  type='button'
-                  variant={selectedCourseId === course.external_id ? 'primary' : 'outline'}
-                  onClick={() => {
-                    setSelectedCourseId(course.external_id);
-                    if (roundId !== null) {
-                      importCourse.mutate(course.external_id);
-                    }
-                  }}
-                  disabled={roundId === null || isLocked || importCourse.isPending}
-                >
-                  {selectedCourseId === course.external_id ? 'Selected' : 'Assign'}
-                </Button>
-              </div>
-            </div>
           ))}
-
-          {roundAggregate.data?.course ? (
-            <p className='text-sm text-cyan-300'>Assigned course: {roundAggregate.data.course.name}</p>
-          ) : null}
         </div>
       </Card>
 
-      <Card className='lg:col-span-2'>
+      <Card>
         <div className='flex flex-wrap items-center justify-between gap-2'>
-          <CardTitle>Players</CardTitle>
+          <CardTitle>
+            <span className='inline-flex items-center gap-2'>
+              <UsersIcon className='h-5 w-5 text-[var(--color-primary)]' />
+              Who is playing?
+            </span>
+          </CardTitle>
           <PlayersCountBadge count={players.length} max={4} />
         </div>
-        <CardDescription>Add, edit, or remove players before scoring. Player order drives leaderboard display.</CardDescription>
+        <CardDescription>Add up to 4 players. The order here sets your leaderboard order.</CardDescription>
 
         <form
-          className='mt-4 grid gap-3 md:grid-cols-[2fr_1fr_auto]'
+          className='mt-4 grid gap-3 sm:grid-cols-[1fr_auto]'
           onSubmit={playerForm.handleSubmit((values) => addPlayer.mutate(values))}
         >
-          <Input placeholder='Player name' {...playerForm.register('display_name')} />
-          <Input
-            min={1}
-            max={4}
-            type='number'
-            {...playerForm.register('sort_order', { valueAsNumber: true })}
-          />
+          <Input placeholder='Add player name' {...playerForm.register('display_name')} />
+          <input type='hidden' {...playerForm.register('sort_order', { valueAsNumber: true })} />
           <Button
             type='submit'
             variant='primary'
-            className='min-h-11'
+            className='min-h-11 sm:min-w-36'
             disabled={roundId === null || isLocked || maxPlayersReached || addPlayer.isPending}
           >
             {addPlayer.isPending ? 'Adding...' : 'Add Player'}
@@ -292,11 +293,15 @@ export function SetupRoute(): JSX.Element {
           {playerForm.formState.errors.sort_order ? (
             <p className='text-sm text-rose-300'>{playerForm.formState.errors.sort_order.message}</p>
           ) : null}
-          {roundId === null ? <p className='text-sm text-slate-400'>Create a round before adding players.</p> : null}
+          {roundId === null ? (
+            <p className='text-sm text-[var(--color-text-muted)]'>Start a round before adding players.</p>
+          ) : null}
         </div>
 
         {maxPlayersReached ? (
-          <p className='mt-2 text-sm text-amber-200'>Maximum of 4 players reached. Remove a player before adding another.</p>
+          <p className='mt-2 text-sm text-[var(--color-warning-text)]'>
+            You have 4 players. Remove one to add someone else.
+          </p>
         ) : null}
 
         <div className='mt-4 space-y-2'>
@@ -341,13 +346,13 @@ function PlayerRow({ player, isLocked, editing, setEditing, onEdit, onDelete }: 
 
   if (!editing) {
     return (
-      <div className='rounded-md border border-slate-700/70 bg-slate-900/50 px-3 py-2'>
+      <div className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-3'>
         <div className='flex items-center justify-between gap-3'>
           <div className='min-w-0'>
-            <p className='text-sm font-semibold text-slate-100'>{player.display_name}</p>
-            <p className='text-xs text-zinc-500'>Order: {player.sort_order}</p>
+            <p className='text-sm font-semibold text-[var(--color-text)]'>{player.display_name}</p>
+            <p className='text-xs text-[var(--color-text-muted)]'>Player {player.sort_order}</p>
           </div>
-          <span className='inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-slate-600/80 bg-slate-800/70 px-2 text-xs font-semibold text-slate-200'>
+          <span className='inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-xs font-semibold text-[var(--color-text)]'>
             {player.sort_order}
           </span>
         </div>
@@ -365,7 +370,7 @@ function PlayerRow({ player, isLocked, editing, setEditing, onEdit, onDelete }: 
 
   return (
     <form
-      className='grid gap-2 rounded-md border border-slate-700/70 bg-slate-900/50 px-3 py-2 md:grid-cols-[2fr_1fr_auto_auto]'
+      className='grid gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-3 md:grid-cols-[2fr_1fr_auto_auto]'
       onSubmit={editForm.handleSubmit((payload) => onEdit(payload))}
     >
       <Input {...editForm.register('display_name')} />
@@ -389,21 +394,37 @@ function nextSortOrder(currentPlayerCount: number): number {
   return Math.min(4, Math.max(1, currentPlayerCount + 1));
 }
 
-function getRoundStatusCopy(
+function getRoundStatus(
   status: 'draft' | 'active' | 'completed' | undefined,
   roundId: number | null,
-): string {
+): { label: string; tone: 'neutral' | 'info' | 'success' | 'warning'; copy: string } {
   if (roundId === null || status === undefined) {
-    return 'No round yet. Start by creating a new round.';
+    return {
+      label: 'Not started',
+      tone: 'neutral',
+      copy: 'Tap Start Round to begin.',
+    };
   }
 
   if (status === 'draft') {
-    return 'Round status: Draft. Continue setup by assigning a course and adding players.';
+    return {
+      label: 'In setup',
+      tone: 'info',
+      copy: 'Choose a course and add players to get ready.',
+    };
   }
 
   if (status === 'active') {
-    return 'Round status: Active. Setup is ready for scoring.';
+    return {
+      label: 'Ready to score',
+      tone: 'success',
+      copy: 'Everything is set. Continue to scoring when ready.',
+    };
   }
 
-  return 'Round status: Completed. This round is read-only.';
+  return {
+    label: 'Completed',
+    tone: 'warning',
+    copy: 'This round is finished and read-only.',
+  };
 }

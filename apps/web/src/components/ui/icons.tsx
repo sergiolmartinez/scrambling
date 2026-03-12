@@ -71,3 +71,32 @@ export function WifiOffIcon(props: IconProps): JSX.Element {
     </svg>
   );
 }
+
+export function FlagIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <path d='M5 3v18' />
+      <path d='M5 4h10l-2.3 3L15 10H5' />
+    </svg>
+  );
+}
+
+export function MapPinIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <path d='M12 21s6-5.6 6-11a6 6 0 1 0-12 0c0 5.4 6 11 6 11z' />
+      <circle cx='12' cy='10' r='2.1' />
+    </svg>
+  );
+}
+
+export function UsersIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <path d='M16.5 19v-1.4a3.1 3.1 0 0 0-3.1-3.1H8.6a3.1 3.1 0 0 0-3.1 3.1V19' />
+      <circle cx='11' cy='8.4' r='2.8' />
+      <path d='M20.6 19v-1a2.5 2.5 0 0 0-2.5-2.5h-1' />
+      <path d='M16.7 5.9a2.3 2.3 0 0 1 0 4.5' />
+    </svg>
+  );
+}

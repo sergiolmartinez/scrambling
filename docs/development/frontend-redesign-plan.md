@@ -59,7 +59,7 @@ Each implementation prompt must end with:
 ## Current Phase Status
 
 - [x] foundation
-- [ ] setup redesign
+- [x] setup redesign
 - [ ] scoring redesign
 - [ ] leaderboard and summary redesign
 - [ ] dark/light mode verification
