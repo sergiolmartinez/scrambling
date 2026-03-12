@@ -11,6 +11,12 @@ React + Vite web shell for the Scrambling MVP frontend.
 - shadcn-style UI primitives (`src/components/ui`)
 - React Hook Form + Zod
 
+## Current UX status
+
+- progress-aware shell navigation across setup, scoring, leaderboard, and summary
+- setup flow includes readiness checklist for round/course/player completion
+- visual system refreshed for clearer hierarchy and mobile responsiveness
+
 ## Commands
 
 ```bash
@@ -39,3 +45,7 @@ The client normalizes this automatically.
 - `/scoring`
 - `/leaderboard`
 - `/summary`
+
+Planned next route:
+
+- `/login` (auth gate before round workflows)

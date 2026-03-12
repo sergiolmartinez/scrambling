@@ -10,8 +10,10 @@ export function NavItem({ to, children }: NavItemProps): JSX.Element {
     <NavLink
       className={({ isActive }) =>
         cn(
-          'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-          isActive ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-300 hover:bg-zinc-800 hover:text-white',
+          'inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium transition-colors',
+          isActive
+            ? 'border-cyan-300/70 bg-cyan-200/90 text-slate-900'
+            : 'border-slate-700/70 text-slate-200 hover:border-sky-300/40 hover:bg-slate-900/75 hover:text-white',
         )
       }
       to={to}

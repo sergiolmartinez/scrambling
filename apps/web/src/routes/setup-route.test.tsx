@@ -115,6 +115,52 @@ describe('SetupRoute', () => {
     });
   });
 
+  it('imports and assigns external course from search result', async () => {
+    useRoundSessionStore.setState({ roundId: 7 });
+    mocks.getRoundAggregate.mockResolvedValue({
+      round: { id: 7, status: 'draft', course_id: null, started_at: null, completed_at: null, notes: null },
+      course: null,
+      players: [{ id: 1, round_id: 7, display_name: 'A', sort_order: 1 }],
+      hole_scores: [],
+      contributions: [],
+    });
+    mocks.searchCourses.mockResolvedValue([
+      {
+        external_id: '991',
+        name: 'Pine Valley',
+        city: 'Clementon',
+        state: 'NJ',
+        country: 'US',
+        total_holes: 18,
+        source: 'golfcourseapi',
+      },
+    ]);
+    mocks.importCourseToRound.mockResolvedValue({
+      id: 7,
+      status: 'draft',
+      course_id: 101,
+      started_at: null,
+      completed_at: null,
+      notes: null,
+    });
+
+    renderSetup();
+
+    fireEvent.change(screen.getByPlaceholderText(/search by course or city/i), {
+      target: { value: 'Pine' },
+    });
+
+    await waitFor(() => expect(screen.getByText(/pine valley/i)).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /assign/i }));
+
+    await waitFor(() => expect(mocks.importCourseToRound).toHaveBeenCalledWith(7, '991'));
+
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText(/search by course or city/i)).toHaveValue(''),
+    );
+  });
+
   it('shows locked message and disables setup mutations when round is completed', async () => {
     useRoundSessionStore.setState({ roundId: 11 });
     mocks.getRoundAggregate.mockResolvedValue({

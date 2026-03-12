@@ -69,3 +69,26 @@ Deliverables:
 - docs polish
 - CI pass
 - release checklist
+
+## Milestone 8 - UX iteration
+
+Deliverables:
+- shell navigation and flow clarity improvements
+- setup/scoring UX polish
+- responsive treatment and visual consistency updates
+
+## Milestone 9 - Authentication
+
+Deliverables:
+- user + session persistence model
+- auth API endpoints and guards
+- login UX and protected app routes
+- auth test coverage
+
+## Milestone 10 - Invites and collaboration
+
+Deliverables:
+- round membership and invite model
+- invite lifecycle endpoints (create/list/revoke/accept)
+- collaboration UX in setup and summary
+- role-based permission checks
