@@ -3,26 +3,74 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: light;
+  --color-bg: #f3f6f4;
+  --color-bg-elevated: #e8efe9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef4ef;
+  --color-border: #d5e1d9;
+  --color-text: #1b2a24;
+  --color-text-muted: #5a6a63;
+  --color-primary: #2f8f57;
+  --color-primary-foreground: #f4fffa;
+  --color-ring: rgba(47, 143, 87, 0.33);
+
+  --color-success-bg: #e8f7ef;
+  --color-success-border: #9fd8b4;
+  --color-success-text: #19663a;
+
+  --color-warning-bg: #fff4dd;
+  --color-warning-border: #f0ca7b;
+  --color-warning-text: #8a5a14;
+
+  --color-danger-bg: #fde8ea;
+  --color-danger-border: #f0b9c1;
+  --color-danger-text: #8d1f32;
+
+  --color-info-bg: #e6f0ff;
+  --color-info-border: #9fbcf6;
+  --color-info-text: #1f4f9a;
+}
+
+html[data-theme='dark'] {
   color-scheme: dark;
-  --surface-0: #06101b;
-  --surface-1: #0e1c2f;
-  --surface-2: #13253d;
-  --text-main: #e8f3ff;
-  --text-muted: #9fb4ce;
-  --accent: #64e0ff;
-  --accent-strong: #3cb6e0;
-  --ring: rgba(100, 224, 255, 0.36);
+  --color-bg: #08131b;
+  --color-bg-elevated: #0f1d2b;
+  --color-surface: #122133;
+  --color-surface-muted: #1a2c42;
+  --color-border: #2a3f57;
+  --color-text: #e8f3ff;
+  --color-text-muted: #9cb2ca;
+  --color-primary: #39c57c;
+  --color-primary-foreground: #032012;
+  --color-ring: rgba(57, 197, 124, 0.37);
+
+  --color-success-bg: #113125;
+  --color-success-border: #2b8058;
+  --color-success-text: #95e2b7;
+
+  --color-warning-bg: #3d2c10;
+  --color-warning-border: #8f6b2a;
+  --color-warning-text: #ffd88d;
+
+  --color-danger-bg: #3b1820;
+  --color-danger-border: #7f3240;
+  --color-danger-text: #ffb8c1;
+
+  --color-info-bg: #132641;
+  --color-info-border: #2f5e9e;
+  --color-info-text: #a9c8ff;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(1100px 500px at 12% -8%, rgba(60, 182, 224, 0.2), transparent 64%),
-    radial-gradient(900px 460px at 100% -4%, rgba(118, 209, 255, 0.18), transparent 62%),
-    linear-gradient(180deg, var(--surface-1) 0%, var(--surface-0) 100%);
-  color: var(--text-main);
-  font-family: 'Avenir Next', 'Segoe UI Variable Display', 'Trebuchet MS', sans-serif;
+    radial-gradient(1100px 520px at 10% -10%, color-mix(in srgb, var(--color-primary) 28%, transparent), transparent 65%),
+    radial-gradient(850px 420px at 100% -4%, color-mix(in srgb, var(--color-info-text) 20%, transparent), transparent 62%),
+    linear-gradient(180deg, var(--color-bg-elevated) 0%, var(--color-bg) 100%);
+  color: var(--color-text);
+  font-family: 'Inter', 'Segoe UI Variable Display', 'Avenir Next', sans-serif;
 }
 
 #root {
@@ -30,6 +78,6 @@ body {
 }
 
 ::selection {
-  background: rgba(100, 224, 255, 0.32);
-  color: var(--text-main);
+  background: color-mix(in srgb, var(--color-primary) 32%, transparent);
+  color: var(--color-primary-foreground);
 }

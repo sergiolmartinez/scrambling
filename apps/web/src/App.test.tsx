@@ -4,21 +4,24 @@ import { describe, expect, it } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import { AppLayout } from '@/app/layout';
+import { ThemeProvider } from '@/app/theme-provider';
 
 describe('AppLayout', () => {
   it('renders shell navigation labels', () => {
     const client = new QueryClient();
 
     render(
-      <QueryClientProvider client={client}>
-        <MemoryRouter initialEntries={['/setup']}>
-          <Routes>
-            <Route element={<AppLayout />}>
-              <Route path='/setup' element={<div>Setup Page</div>} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>,
+      <ThemeProvider>
+        <QueryClientProvider client={client}>
+          <MemoryRouter initialEntries={['/setup']}>
+            <Routes>
+              <Route element={<AppLayout />}>
+                <Route path='/setup' element={<div>Setup Page</div>} />
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>
+      </ThemeProvider>,
     );
 
     expect(screen.getByText(/scrambling/i)).toBeInTheDocument();

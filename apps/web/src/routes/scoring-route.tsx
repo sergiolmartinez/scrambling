@@ -6,14 +6,14 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
 import { HoleHeader } from '@/components/scoring/hole-header';
-import { SaveStatusBadge } from '@/components/scoring/save-status-badge';
-import { StickyActionBar } from '@/components/scoring/sticky-action-bar';
 import { EmptyState } from '@/components/state/empty-state';
 import { ErrorState } from '@/components/state/error-state';
 import { LoadingState } from '@/components/state/loading-state';
+import { SaveStatusBadge, type SaveStatus } from '@/components/state/save-status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { StickyActionBar } from '@/components/ui/sticky-action-bar';
 import { apiClient } from '@/lib/api';
 import { useLeaderboardQuery, useRoundAggregateQuery } from '@/lib/queries';
 import { useRoundSessionStore } from '@/store/round-session';
@@ -197,6 +197,37 @@ export function ScoringRoute(): JSX.Element {
     addContributions.isPending ||
     deleteContribution.isPending ||
     holeContributions.isFetching;
+  const online = window.navigator.onLine;
+
+  const overallStatus: SaveStatus = !online
+    ? 'offline'
+    : scoreError || contributionError
+      ? 'error'
+      : isSyncing
+        ? 'syncing'
+        : scoreSavedAt || contributionSavedAt
+          ? 'saved'
+          : 'idle';
+
+  const scoreStatus: SaveStatus = !online
+    ? 'offline'
+    : scoreError
+      ? 'error'
+      : upsertHoleScore.isPending
+        ? 'saving'
+        : scoreSavedAt
+          ? 'saved'
+          : 'idle';
+
+  const contributionStatus: SaveStatus = !online
+    ? 'offline'
+    : contributionError
+      ? 'error'
+      : addContributions.isPending || deleteContribution.isPending
+        ? 'saving'
+        : contributionSavedAt
+          ? 'saved'
+          : 'idle';
 
   return (
     <div className='space-y-6'>
@@ -230,9 +261,9 @@ export function ScoringRoute(): JSX.Element {
             Next Hole
           </Button>
           <SaveStatusBadge
-            isSaving={isSyncing}
-            error={scoreError ?? contributionError}
+            status={overallStatus}
             savedAt={Math.max(scoreSavedAt ?? 0, contributionSavedAt ?? 0) || null}
+            errorMessage={scoreError ?? contributionError}
             idleLabel='Waiting for changes'
           />
           <Button
@@ -295,7 +326,12 @@ export function ScoringRoute(): JSX.Element {
             <Button type='submit' variant='primary' disabled={isLocked || upsertHoleScore.isPending} className='min-h-11'>
               {upsertHoleScore.isPending ? 'Saving...' : 'Save Hole Score'}
             </Button>
-            <SaveStatusBadge isSaving={upsertHoleScore.isPending} error={scoreError} savedAt={scoreSavedAt} idleLabel='No score changes yet' />
+            <SaveStatusBadge
+              status={scoreStatus}
+              errorMessage={scoreError}
+              savedAt={scoreSavedAt}
+              idleLabel='No score changes yet'
+            />
           </div>
 
           <label className='col-span-full flex items-center gap-2 text-sm text-zinc-300'>
@@ -371,8 +407,8 @@ export function ScoringRoute(): JSX.Element {
             {addContributions.isPending ? 'Saving Contributions...' : 'Add Contributions'}
           </Button>
           <SaveStatusBadge
-            isSaving={addContributions.isPending || deleteContribution.isPending}
-            error={contributionError}
+            status={contributionStatus}
+            errorMessage={contributionError}
             savedAt={contributionSavedAt}
             idleLabel='No contribution changes yet'
           />

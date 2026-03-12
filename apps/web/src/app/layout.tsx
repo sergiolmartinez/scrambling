@@ -1,6 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import { NavItem } from '@/components/ui/nav-item';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 const navItems = [
   { to: '/setup', label: 'Setup', shortLabel: '1' },
@@ -11,20 +14,36 @@ const navItems = [
 
 export function AppLayout(): JSX.Element {
   const location = useLocation();
+  const [isOnline, setIsOnline] = useState<boolean>(() => window.navigator.onLine);
+
+  useEffect(() => {
+    const onOnline = (): void => setIsOnline(true);
+    const onOffline = (): void => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
 
   return (
-    <div className='min-h-screen text-zinc-100'>
-      <header className='sticky top-0 z-30 border-b border-sky-900/40 bg-slate-950/75 backdrop-blur-xl'>
+    <div className='min-h-screen text-[var(--color-text)]'>
+      <header className='sticky top-0 z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)]/90 backdrop-blur-xl'>
         <div className='mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 md:px-6'>
           <div className='space-y-1'>
-            <p className='text-xs font-semibold uppercase tracking-[0.14em] text-sky-300/80'>Scrambling</p>
-            <h1 className='text-xl font-semibold tracking-tight text-slate-100'>Round Control Center</h1>
-            <p className='text-xs text-slate-400'>MVP flow: setup to final summary</p>
+            <p className='text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]'>Scrambling</p>
+            <h1 className='text-xl font-semibold tracking-tight text-[var(--color-text)]'>Round Control Center</h1>
+            <p className='text-xs text-[var(--color-text-muted)]'>MVP flow: setup to final summary</p>
           </div>
-          <nav className='flex flex-wrap gap-2'>
+          <div className='flex flex-wrap items-center gap-3'>
+            <ThemeToggle />
+            <StatusBadge tone={isOnline ? 'success' : 'warning'}>{isOnline ? 'Online' : 'Offline'}</StatusBadge>
+          </div>
+          <nav className='flex flex-wrap gap-2 md:ml-auto'>
             {navItems.map((item) => (
               <NavItem key={item.to} to={item.to}>
-                <span className='mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-600/70 text-[11px] font-semibold text-slate-200'>
+                <span className='mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full border border-[var(--color-border)] text-[11px] font-semibold'>
                   {item.shortLabel}
                 </span>
                 {item.label}
@@ -33,9 +52,9 @@ export function AppLayout(): JSX.Element {
           </nav>
         </div>
         <div className='mx-auto max-w-6xl px-4 pb-4 md:px-6'>
-          <div className='h-1.5 rounded-full bg-slate-800/80'>
+          <div className='h-1.5 rounded-full bg-[var(--color-surface-muted)]'>
             <div
-              className='h-full rounded-full bg-gradient-to-r from-sky-300 to-cyan-400 transition-all'
+              className='h-full rounded-full bg-[var(--color-primary)] transition-all'
               style={{ width: `${progressWidth(location.pathname)}%` }}
             />
           </div>

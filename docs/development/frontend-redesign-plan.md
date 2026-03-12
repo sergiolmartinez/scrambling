@@ -58,7 +58,7 @@ Each implementation prompt must end with:
 
 ## Current Phase Status
 
-- [ ] foundation
+- [x] foundation
 - [ ] setup redesign
 - [ ] scoring redesign
 - [ ] leaderboard and summary redesign

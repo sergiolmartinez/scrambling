@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
-import { CourseResultCard } from '@/components/setup/course-result-card';
 import { PlayersCountBadge } from '@/components/setup/players-count-badge';
 import { SelectedCourseBanner } from '@/components/setup/selected-course-banner';
 import { EmptyState } from '@/components/state/empty-state';
