@@ -1,11 +1,18 @@
+import { useNavigate } from 'react-router-dom';
+
+import { LeaderboardTable } from '@/components/leaderboard/leaderboard-table';
+import { CompletionBanner } from '@/components/summary/completion-banner';
+import { SummaryStatGrid } from '@/components/summary/summary-stat-grid';
 import { EmptyState } from '@/components/state/empty-state';
 import { ErrorState } from '@/components/state/error-state';
 import { LoadingState } from '@/components/state/loading-state';
+import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { useSummaryQuery } from '@/lib/queries';
 import { useRoundSessionStore } from '@/store/round-session';
 
 export function SummaryRoute(): JSX.Element {
+  const navigate = useNavigate();
   const roundId = useRoundSessionStore((state) => state.roundId);
   const summary = useSummaryQuery();
 
@@ -28,30 +35,39 @@ export function SummaryRoute(): JSX.Element {
     0,
   );
   const sortedHoles = [...summary.data.hole_scores].sort((left, right) => left.hole_number - right.hole_number);
+  const totalHoles = summary.data.course?.total_holes ?? 18;
+  const isCompleted = summary.data.round.status === 'completed';
 
   return (
     <div className='space-y-6'>
       <Card>
         <CardTitle>Round Summary</CardTitle>
-        <CardDescription>Completion-oriented summary payload from API.</CardDescription>
+        <CardDescription>Final recap for round {summary.data.round.id}.</CardDescription>
 
-        <div className='mt-4 grid gap-3 text-sm md:grid-cols-4'>
-          <div className='rounded-md border border-zinc-800 px-3 py-2'>
-            <p className='text-zinc-400'>Round status</p>
-            <p className='font-semibold capitalize'>{summary.data.round.status}</p>
-          </div>
-          <div className='rounded-md border border-zinc-800 px-3 py-2'>
-            <p className='text-zinc-400'>Course</p>
-            <p className='font-semibold'>{summary.data.course?.name ?? 'Not assigned'}</p>
-          </div>
-          <div className='rounded-md border border-zinc-800 px-3 py-2'>
-            <p className='text-zinc-400'>Total score</p>
-            <p className='font-semibold'>{totalScore}</p>
-          </div>
-          <div className='rounded-md border border-zinc-800 px-3 py-2'>
-            <p className='text-zinc-400'>Completed holes</p>
-            <p className='font-semibold'>{completedHoles}</p>
-          </div>
+        <div className='mt-4 space-y-3'>
+          <CompletionBanner status={summary.data.round.status} completedAt={summary.data.round.completed_at} />
+          <SummaryStatGrid
+            status={summary.data.round.status}
+            courseName={summary.data.course?.name ?? 'Not assigned'}
+            totalScore={totalScore}
+            completedHoles={completedHoles}
+            totalHoles={totalHoles}
+          />
+        </div>
+
+        <div className='mt-4 flex flex-wrap gap-2'>
+          <Button type='button' variant='outline' onClick={() => navigate('/leaderboard')} className='min-h-11'>
+            View Leaderboard
+          </Button>
+          {!isCompleted ? (
+            <Button type='button' variant='primary' onClick={() => navigate('/scoring')} className='min-h-11'>
+              Return to Scoring
+            </Button>
+          ) : (
+            <Button type='button' variant='primary' onClick={() => navigate('/setup')} className='min-h-11'>
+              Start New Round
+            </Button>
+          )}
         </div>
       </Card>
 
@@ -62,26 +78,14 @@ export function SummaryRoute(): JSX.Element {
         {summary.data.leaderboard.length === 0 ? (
           <EmptyState title='No contributions recorded' description='Score and contribution data will appear here.' />
         ) : (
-          <ol className='mt-4 space-y-2'>
-            {summary.data.leaderboard.map((entry, index) => (
-              <li
-                className='flex items-center justify-between rounded-md border border-zinc-800 px-3 py-2 text-sm'
-                key={entry.round_player_id}
-              >
-                <span>
-                  #{index + 1} {entry.display_name}
-                </span>
-                <span className='font-semibold'>{entry.total_contributions}</span>
-              </li>
-            ))}
-          </ol>
+          <LeaderboardTable entries={summary.data.leaderboard} />
         )}
 
         <p className='mt-3 text-sm text-zinc-400'>Total contributions recorded: {totalContributions}</p>
       </Card>
 
       <Card>
-        <CardTitle>Hole Results</CardTitle>
+        <CardTitle>Hole Completion Summary</CardTitle>
         <CardDescription>Saved score records by hole number.</CardDescription>
 
         {sortedHoles.length === 0 ? (
@@ -90,16 +94,43 @@ export function SummaryRoute(): JSX.Element {
           <div className='mt-4 space-y-2'>
             {sortedHoles.map((hole) => (
               <div
-                className='grid grid-cols-4 gap-2 rounded-md border border-zinc-800 px-3 py-2 text-sm'
+                className='grid gap-2 rounded-md border border-zinc-800 bg-slate-900/35 px-3 py-2 text-sm sm:grid-cols-4'
                 key={hole.id}
               >
                 <span>Hole {hole.hole_number}</span>
                 <span>Score: {hole.score ?? '-'}</span>
                 <span>Par: {hole.par_snapshot ?? '-'}</span>
-                <span>{hole.completed ? 'Completed' : 'In progress'}</span>
+                <span
+                  className={hole.completed ? 'text-emerald-200' : 'text-amber-200'}
+                >
+                  {hole.completed ? 'Completed' : 'In progress'}
+                </span>
               </div>
             ))}
           </div>
+        )}
+      </Card>
+
+      <Card>
+        <CardTitle>Players</CardTitle>
+        <CardDescription>Round roster at completion.</CardDescription>
+        {summary.data.players.length === 0 ? (
+          <EmptyState title='No players recorded' description='Players were not found for this round summary.' />
+        ) : (
+          <ul className='mt-4 space-y-2'>
+            {summary.data.players
+              .slice()
+              .sort((left, right) => left.sort_order - right.sort_order)
+              .map((player) => (
+                <li
+                  className='flex items-center justify-between rounded-md border border-zinc-800 bg-slate-900/35 px-3 py-2 text-sm'
+                  key={player.id}
+                >
+                  <span className='font-semibold text-slate-100'>{player.display_name}</span>
+                  <span className='text-slate-300'>Order {player.sort_order}</span>
+                </li>
+              ))}
+          </ul>
         )}
       </Card>
     </div>

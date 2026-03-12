@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LeaderboardRoute } from '@/routes/leaderboard-route';
@@ -35,11 +36,16 @@ describe('LeaderboardRoute', () => {
   });
 
   it('renders ordered totals and completed-round message', () => {
-    render(<LeaderboardRoute />);
+    render(
+      <MemoryRouter>
+        <LeaderboardRoute />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByText(/round is completed; leaderboard is final/i)).toBeInTheDocument();
-    expect(screen.getByText(/#1 Bob/i)).toBeInTheDocument();
-    expect(screen.getByText(/#2 Alice/i)).toBeInTheDocument();
+    expect(screen.getByText(/bob · leader/i)).toBeInTheDocument();
+    expect(screen.getByText(/alice/i)).toBeInTheDocument();
     expect(screen.getByText(/total contributions/i)).toBeInTheDocument();
+    expect(screen.getByText(/top player: bob with 5 contributions/i)).toBeInTheDocument();
   });
 });

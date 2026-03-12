@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SummaryRoute } from '@/routes/summary-route';
@@ -36,13 +37,19 @@ describe('SummaryRoute', () => {
   });
 
   it('renders summary stats, leaderboard, and hole results', () => {
-    render(<SummaryRoute />);
+    render(
+      <MemoryRouter>
+        <SummaryRoute />
+      </MemoryRouter>,
+    );
 
-    expect(screen.getByText(/round summary/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /round summary/i })).toBeInTheDocument();
+    expect(screen.getByText(/round completed/i)).toBeInTheDocument();
     expect(screen.getByText(/pebble beach/i)).toBeInTheDocument();
     expect(screen.getByText(/total score/i)).toBeInTheDocument();
-    expect(screen.getByText(/#1 Taylor/i)).toBeInTheDocument();
+    expect(screen.getByText(/taylor · leader/i)).toBeInTheDocument();
     expect(screen.getByText(/hole 1/i)).toBeInTheDocument();
     expect(screen.getByText(/hole 2/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /start new round/i })).toBeInTheDocument();
   });
 });
