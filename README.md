@@ -92,6 +92,7 @@ Use the MVP release checklist before cutting a release:
 
 - `docs/plan/next-priorities-roadmap.md`: implementation sequence for UI iteration, auth/login, and player invites
 - `docs/plan/milestone-plan.md`: extended milestones for post-MVP evolution
+
 ## Architecture pointers
 
 - API contract: `docs/architecture/api-contract.md`
@@ -99,3 +100,7 @@ Use the MVP release checklist before cutting a release:
 - Integration details: `docs/integrations/golfcourseapi.md`
 
 Course search/detail always flows through backend integration and snapshots imported provider data locally.
+
+frontend redesign track exists
+
+docs for redesign live under docs/product, docs/architecture, docs/development
