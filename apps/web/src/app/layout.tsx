@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
+import { useAuth } from '@/app/auth-state';
 import { NavItem } from '@/components/ui/nav-item';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Button } from '@/components/ui/button';
+import { LogOutIcon } from '@/components/ui/icons';
+import { apiClient } from '@/lib/api';
 
 const navItems = [
   { to: '/setup', label: 'Setup', shortLabel: '1' },
@@ -15,6 +19,7 @@ const navItems = [
 export function AppLayout(): JSX.Element {
   const location = useLocation();
   const [isOnline, setIsOnline] = useState<boolean>(() => window.navigator.onLine);
+  const { clearSession, user } = useAuth();
 
   useEffect(() => {
     const onOnline = (): void => setIsOnline(true);
@@ -37,8 +42,24 @@ export function AppLayout(): JSX.Element {
             <p className='text-xs text-[var(--color-text-muted)]'>MVP flow: setup to final summary</p>
           </div>
           <div className='flex flex-wrap items-center gap-3'>
+            {user ? <StatusBadge tone='neutral'>{user.display_name}</StatusBadge> : null}
             <ThemeToggle />
             <StatusBadge tone={isOnline ? 'success' : 'warning'}>{isOnline ? 'Online' : 'Offline'}</StatusBadge>
+            <Button
+              type='button'
+              variant='outline'
+              className='min-h-10 gap-1.5 px-3 text-xs sm:text-sm'
+              onClick={async () => {
+                try {
+                  await apiClient.signOut();
+                } finally {
+                  clearSession();
+                }
+              }}
+            >
+              <LogOutIcon className='h-4 w-4' />
+              Sign Out
+            </Button>
           </div>
           <nav className='flex flex-wrap gap-2 md:ml-auto'>
             {navItems.map((item) => (

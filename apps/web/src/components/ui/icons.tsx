@@ -145,3 +145,22 @@ export function TrophyIcon(props: IconProps): JSX.Element {
     </svg>
   );
 }
+
+export function LogOutIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <path d='M14.5 17.5 20 12l-5.5-5.5' />
+      <path d='M20 12H9.5' />
+      <path d='M10.5 20H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4.5' />
+    </svg>
+  );
+}
+
+export function LockIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <rect x='5' y='10' width='14' height='10' rx='2' />
+      <path d='M8.5 10V8a3.5 3.5 0 1 1 7 0v2' />
+    </svg>
+  );
+}

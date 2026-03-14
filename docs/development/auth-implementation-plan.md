@@ -49,7 +49,7 @@ Each implementation prompt must provide:
 ## Phase Tracking
 
 - [x] backend auth foundation
-- [ ] frontend auth foundation
+- [x] frontend auth foundation
 - [ ] ownership wiring
 - [ ] profile page
 - [ ] settings page

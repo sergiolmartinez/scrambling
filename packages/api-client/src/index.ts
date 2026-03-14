@@ -1,5 +1,6 @@
 import type {
   ApiErrorResponse,
+  AuthUserRead,
   CourseRead,
   ExternalCourseDetailRead,
   ExternalCourseSearchRead,
@@ -15,8 +16,24 @@ import type {
 
 type RequestInitWithMethod = RequestInit & { method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' };
 
+export class ApiRequestError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+    public readonly code?: string,
+    public readonly details?: Record<string, string> | null,
+  ) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
+
 export type ApiClient = {
   health: () => Promise<HealthResponse>;
+  signUp: (payload: { email: string; display_name: string; password: string }) => Promise<AuthUserRead>;
+  signIn: (payload: { email: string; password: string }) => Promise<AuthUserRead>;
+  signOut: () => Promise<void>;
+  getCurrentUser: () => Promise<AuthUserRead>;
   createRound: () => Promise<RoundRead>;
   getRoundAggregate: (roundId: number) => Promise<RoundAggregateRead>;
   addPlayer: (roundId: number, payload: { display_name: string; sort_order: number }) => Promise<RoundPlayerRead>;
@@ -55,17 +72,18 @@ export type ApiClient = {
 export function createApiClient(baseUrl: string): ApiClient {
   const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
 
-  async function getErrorMessage(response: Response): Promise<string> {
+  async function buildRequestError(response: Response): Promise<ApiRequestError> {
     try {
       const payload = (await response.json()) as ApiErrorResponse;
-      if (payload.message) {
-        return payload.message;
-      }
+      return new ApiRequestError(
+        response.status,
+        payload.message || `Request failed: ${response.status}`,
+        payload.code,
+        payload.details,
+      );
     } catch {
-      // Keep fallback when response body is not JSON.
+      return new ApiRequestError(response.status, `Request failed: ${response.status}`);
     }
-
-    return `Request failed: ${response.status}`;
   }
 
   async function requestJson<T>(path: string, init?: RequestInitWithMethod): Promise<T> {
@@ -73,11 +91,12 @@ export function createApiClient(baseUrl: string): ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       ...init,
     });
 
     if (!response.ok) {
-      throw new Error(await getErrorMessage(response));
+      throw await buildRequestError(response);
     }
 
     return (await response.json()) as T;
@@ -88,16 +107,39 @@ export function createApiClient(baseUrl: string): ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       ...init,
     });
     if (!response.ok) {
-      throw new Error(await getErrorMessage(response));
+      throw await buildRequestError(response);
     }
   }
 
   return {
     async health(): Promise<HealthResponse> {
       return requestJson<HealthResponse>('/health', { method: 'GET' });
+    },
+    async signUp(payload: {
+      email: string;
+      display_name: string;
+      password: string;
+    }): Promise<AuthUserRead> {
+      return requestJson<AuthUserRead>('/auth/sign-up', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    async signIn(payload: { email: string; password: string }): Promise<AuthUserRead> {
+      return requestJson<AuthUserRead>('/auth/sign-in', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    async signOut(): Promise<void> {
+      return requestNoContent('/auth/sign-out', { method: 'POST' });
+    },
+    async getCurrentUser(): Promise<AuthUserRead> {
+      return requestJson<AuthUserRead>('/auth/me', { method: 'GET' });
     },
     async createRound(): Promise<RoundRead> {
       return requestJson<RoundRead>('/rounds', {

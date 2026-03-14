@@ -2,6 +2,14 @@ export type HealthResponse = {
   status: 'ok';
 };
 
+export type AuthUserRead = {
+  id: number;
+  email: string;
+  display_name: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type RoundStatus = 'draft' | 'active' | 'completed';
 
 export type CourseRead = {

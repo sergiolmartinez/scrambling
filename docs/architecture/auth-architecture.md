@@ -90,6 +90,16 @@ Scrambling uses secure HTTP-only cookie-based authentication for the browser cli
 - frontend restores session state by calling `GET /api/v1/auth/me`
 - protected routes require authenticated user context
 
+### Frontend Foundation (Auth 02)
+
+- Sign-in route: `/sign-in`
+- Sign-up route: `/sign-up`
+- Session restore: centralized auth provider calls `GET /api/v1/auth/me`
+- Route protection:
+  - unauthenticated users are redirected to sign-in
+  - authenticated users are redirected away from auth screens into app routes
+- Sign-out clears server session via `POST /api/v1/auth/sign-out` and returns user to sign-in
+
 ### Security Expectations
 
 - cookies should be HTTP-only
