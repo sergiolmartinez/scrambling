@@ -6,6 +6,8 @@ import { ErrorState } from '@/components/state/error-state';
 import { LoadingState } from '@/components/state/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card';
+import { TrophyIcon } from '@/components/ui/icons';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { useLeaderboardQuery, useRoundAggregateQuery } from '@/lib/queries';
 import { useRoundSessionStore } from '@/store/round-session';
 
@@ -16,7 +18,7 @@ export function LeaderboardRoute(): JSX.Element {
   const leaderboard = useLeaderboardQuery();
 
   if (roundId === null) {
-    return <EmptyState title='No active round' description='Create a round in Setup before viewing leaderboard.' />;
+    return <EmptyState title='No round yet' description='Start a round in Setup before viewing the leaderboard.' />;
   }
 
   if (leaderboard.isPending || aggregate.isPending) {
@@ -24,7 +26,7 @@ export function LeaderboardRoute(): JSX.Element {
   }
 
   if (leaderboard.isError || aggregate.isError) {
-    return <ErrorState message='Failed to load leaderboard data.' />;
+    return <ErrorState message="Couldn't load the leaderboard right now." />;
   }
 
   const totalContributions = leaderboard.data.reduce((sum, entry) => sum + entry.total_contributions, 0);
@@ -38,56 +40,72 @@ export function LeaderboardRoute(): JSX.Element {
   }
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-5'>
       <Card>
-        <CardTitle>Leaderboard</CardTitle>
-        <CardDescription>Ordered contribution totals for round {aggregate.data.round.id}.</CardDescription>
+        <CardTitle>
+          <span className='inline-flex items-center gap-2'>
+            <TrophyIcon className='h-5 w-5 text-[var(--color-primary)]' />
+            Leaderboard
+          </span>
+        </CardTitle>
+        <CardDescription>Live ranking by total contributions.</CardDescription>
 
         <div className='mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4'>
-          <div className='rounded-md border border-zinc-800 bg-slate-900/35 px-3 py-2'>
-            <p className='text-zinc-400'>Round status</p>
-            <p className='font-semibold capitalize'>{aggregate.data.round.status}</p>
+          <div className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2'>
+            <p className='text-[var(--color-text-muted)]'>Round status</p>
+            <p className='font-semibold text-[var(--color-text)] capitalize'>{aggregate.data.round.status}</p>
           </div>
-          <div className='rounded-md border border-zinc-800 bg-slate-900/35 px-3 py-2'>
-            <p className='text-zinc-400'>Players ranked</p>
-            <p className='font-semibold'>{leaderboard.data.length}</p>
+          <div className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2'>
+            <p className='text-[var(--color-text-muted)]'>Players ranked</p>
+            <p className='font-semibold text-[var(--color-text)]'>{leaderboard.data.length}</p>
           </div>
-          <div className='rounded-md border border-zinc-800 bg-slate-900/35 px-3 py-2'>
-            <p className='text-zinc-400'>Total contributions</p>
-            <p className='font-semibold'>{totalContributions}</p>
+          <div className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2'>
+            <p className='text-[var(--color-text-muted)]'>Total contributions</p>
+            <p className='font-semibold text-[var(--color-text)]'>{totalContributions}</p>
           </div>
-          <div className='rounded-md border border-zinc-800 bg-slate-900/35 px-3 py-2'>
-            <p className='text-zinc-400'>Last updated</p>
-            <p className='font-semibold'>Just now</p>
+          <div className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2'>
+            <p className='text-[var(--color-text-muted)]'>Last updated</p>
+            <p className='font-semibold text-[var(--color-text)]'>Just now</p>
           </div>
         </div>
 
-        <div className='mt-3 rounded-md border border-slate-700/70 bg-slate-900/35 px-3 py-2 text-sm'>
-          <p className='text-slate-200'>
+        <div className='mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm'>
+          <p className='font-semibold text-[var(--color-text)]'>
             {tiedLeaders.length > 1
-              ? `Tie for first between ${tiedLeaders.map((entry) => entry.display_name).join(', ')} at ${topScore} contributions.`
+              ? `Tie for first: ${tiedLeaders.map((entry) => entry.display_name).join(' and ')} (${topScore} each).`
               : `Top player: ${leader?.display_name ?? 'N/A'} with ${topScore} contributions.`}
+          </p>
+          {tiedLeaders.length > 1 ? (
+            <p className='mt-1 text-xs text-[var(--color-text-muted)]'>
+              Tied players share the same rank and appear grouped at the top.
+            </p>
+          ) : null}
+        </div>
+
+        <div className='mt-3 flex flex-wrap items-center gap-2'>
+          <StatusBadge tone={isCompleted ? 'success' : 'info'}>
+            {isCompleted ? 'Final leaderboard' : 'Updates live while scoring'}
+          </StatusBadge>
+          <p className='text-sm text-[var(--color-text-muted)]'>
+            {isCompleted ? 'Round complete and locked.' : 'Return to scoring to keep updating totals.'}
           </p>
         </div>
 
-        {isCompleted ? (
-          <p className='mt-3 text-sm text-amber-300'>Round is completed; leaderboard is final.</p>
-        ) : (
-          <p className='mt-3 text-sm text-zinc-400'>Round is still active; totals update as scores are entered.</p>
-        )}
-
-        {!isCompleted ? (
-          <div className='mt-4'>
+        <div className='mt-4 flex flex-wrap gap-2'>
+          {!isCompleted ? (
             <Button type='button' variant='primary' onClick={() => navigate('/scoring')} className='min-h-11'>
-              Return to Scoring
+              Continue Scoring
             </Button>
-          </div>
-        ) : null}
+          ) : null}
+          <Button type='button' variant='outline' onClick={() => navigate('/summary')} className='min-h-11'>
+            View Round Summary
+          </Button>
+        </div>
       </Card>
 
       <Card>
-        <CardTitle>Player Totals</CardTitle>
-        <CardDescription>Higher contributions rank first.</CardDescription>
+        <CardTitle>Player Rankings</CardTitle>
+        <CardDescription>Higher contribution totals rank first.</CardDescription>
         <LeaderboardTable entries={leaderboard.data} />
       </Card>
     </div>

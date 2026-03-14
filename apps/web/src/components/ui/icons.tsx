@@ -134,3 +134,14 @@ export function ChevronDownIcon(props: IconProps): JSX.Element {
     </svg>
   );
 }
+
+export function TrophyIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <path d='M8 4h8v2a4 4 0 0 1-8 0z' />
+      <path d='M8 6H5.5A2.5 2.5 0 0 0 3 8.5 4.5 4.5 0 0 0 7.5 13H8' />
+      <path d='M16 6h2.5A2.5 2.5 0 0 1 21 8.5a4.5 4.5 0 0 1-4.5 4.5H16' />
+      <path d='M12 10v6M9 20h6M10 16h4' />
+    </svg>
+  );
+}

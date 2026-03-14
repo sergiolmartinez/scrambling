@@ -1,4 +1,4 @@
-type RankRowProps = {
+type RankEntryRowProps = {
   rankLabel: string;
   displayName: string;
   totalContributions: number;
@@ -7,14 +7,14 @@ type RankRowProps = {
   isTied: boolean;
 };
 
-export function RankRow({
+export function RankEntryRow({
   rankLabel,
   displayName,
   totalContributions,
   sharePercent,
   isLeader,
   isTied,
-}: RankRowProps): JSX.Element {
+}: RankEntryRowProps): JSX.Element {
   return (
     <li
       className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm ${
@@ -33,15 +33,23 @@ export function RankRow({
         >
           #{rankLabel}
         </span>
-        <span className='truncate text-sm font-semibold text-slate-100'>
-          {displayName}
-          {isLeader ? ' · Leader' : ''}
-          {isTied ? ' · Tied' : ''}
+        <span className='truncate text-sm font-semibold text-[var(--color-text)]'>{displayName}</span>
+      </div>
+      <div className='flex items-center gap-2 text-sm'>
+        {isLeader ? (
+          <span className='rounded-full border border-[var(--color-success-border)] bg-[var(--color-success-bg)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-success-text)]'>
+            Leader
+          </span>
+        ) : null}
+        {isTied ? (
+          <span className='rounded-full border border-[var(--color-info-border)] bg-[var(--color-info-bg)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-info-text)]'>
+            Tied
+          </span>
+        ) : null}
+        <span className='font-semibold text-[var(--color-text)]'>
+          {totalContributions} ({sharePercent}%)
         </span>
       </div>
-      <span className='text-sm font-semibold text-slate-100'>
-        {totalContributions} ({sharePercent}%)
-      </span>
     </li>
   );
 }

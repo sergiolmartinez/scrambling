@@ -15,21 +15,21 @@ export function SummaryStatGrid({
 }: SummaryStatGridProps): JSX.Element {
   return (
     <div className='mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4'>
-      <div className='rounded-md border border-zinc-800 bg-slate-900/35 px-3 py-2'>
-        <p className='text-zinc-400'>Round status</p>
-        <p className='font-semibold capitalize'>{status}</p>
+      <div className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2'>
+        <p className='text-[var(--color-text-muted)]'>Round status</p>
+        <p className='font-semibold text-[var(--color-text)] capitalize'>{status}</p>
       </div>
-      <div className='rounded-md border border-zinc-800 bg-slate-900/35 px-3 py-2'>
-        <p className='text-zinc-400'>Course</p>
-        <p className='font-semibold'>{courseName}</p>
+      <div className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2'>
+        <p className='text-[var(--color-text-muted)]'>Course</p>
+        <p className='font-semibold text-[var(--color-text)]'>{courseName}</p>
       </div>
-      <div className='rounded-md border border-zinc-800 bg-slate-900/35 px-3 py-2'>
-        <p className='text-zinc-400'>Total score</p>
-        <p className='font-semibold'>{totalScore}</p>
+      <div className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2'>
+        <p className='text-[var(--color-text-muted)]'>Total score</p>
+        <p className='font-semibold text-[var(--color-text)]'>{totalScore}</p>
       </div>
-      <div className='rounded-md border border-zinc-800 bg-slate-900/35 px-3 py-2'>
-        <p className='text-zinc-400'>Completed holes</p>
-        <p className='font-semibold'>
+      <div className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2'>
+        <p className='text-[var(--color-text-muted)]'>Completed holes</p>
+        <p className='font-semibold text-[var(--color-text)]'>
           {completedHoles}/{totalHoles}
         </p>
       </div>
