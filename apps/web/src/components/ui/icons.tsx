@@ -100,3 +100,37 @@ export function UsersIcon(props: IconProps): JSX.Element {
     </svg>
   );
 }
+
+export function ChevronLeftIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <path d='m14.5 6.5-5 5.5 5 5.5' />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <path d='m9.5 6.5 5 5.5-5 5.5' />
+    </svg>
+  );
+}
+
+export function TargetIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <circle cx='12' cy='12' r='8' />
+      <circle cx='12' cy='12' r='4' />
+      <circle cx='12' cy='12' r='1.2' />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <path d='m6.5 9.5 5.5 5 5.5-5' />
+    </svg>
+  );
+}

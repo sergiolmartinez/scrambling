@@ -6,13 +6,16 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
 import { HoleHeader } from '@/components/scoring/hole-header';
+import { SHOT_TYPE_OPTIONS, ShotTypeSelect } from '@/components/scoring/shot-type-select';
 import { EmptyState } from '@/components/state/empty-state';
 import { ErrorState } from '@/components/state/error-state';
 import { LoadingState } from '@/components/state/loading-state';
 import { SaveStatusBadge, type SaveStatus } from '@/components/state/save-status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card';
+import { ChevronLeftIcon, ChevronRightIcon, TargetIcon } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { StickyActionBar } from '@/components/ui/sticky-action-bar';
 import { apiClient } from '@/lib/api';
 import { useLeaderboardQuery, useRoundAggregateQuery } from '@/lib/queries';
@@ -32,6 +35,8 @@ const contributionSchema = z.object({
 type HoleScoreFormValues = z.infer<typeof holeScoreSchema>;
 type ContributionFormValues = z.infer<typeof contributionSchema>;
 type HoleContribution = Awaited<ReturnType<typeof apiClient.getHoleContributions>>[number];
+
+const PRIMARY_SHOT_TYPES = ['Drive', 'Approach', 'Chip', 'Putt', 'Gimme', 'Penalty'];
 
 export function ScoringRoute(): JSX.Element {
   const navigate = useNavigate();
@@ -112,7 +117,7 @@ export function ScoringRoute(): JSX.Element {
       }));
       await queryClient.invalidateQueries({ queryKey: ['round-aggregate', roundId] });
     },
-    onError: (error: Error) => setScoreError(error.message),
+    onError: () => setScoreError("Couldn't save this hole. Try again."),
   });
 
   const addContributions = useMutation({
@@ -132,7 +137,7 @@ export function ScoringRoute(): JSX.Element {
         queryClient.invalidateQueries({ queryKey: ['leaderboard', roundId] }),
       ]);
     },
-    onError: (error: Error) => setContributionError(error.message),
+    onError: () => setContributionError("Couldn't save those contributions. Try again."),
   });
 
   const deleteContribution = useMutation({
@@ -147,7 +152,7 @@ export function ScoringRoute(): JSX.Element {
         queryClient.invalidateQueries({ queryKey: ['leaderboard', roundId] }),
       ]);
     },
-    onError: (error: Error) => setContributionError(error.message),
+    onError: () => setContributionError("Couldn't remove that contribution. Try again."),
   });
 
   const completeRound = useMutation({
@@ -160,11 +165,11 @@ export function ScoringRoute(): JSX.Element {
       ]);
       navigate('/summary');
     },
-    onError: (error: Error) => setScoreError(error.message),
+    onError: () => setScoreError("Couldn't complete the round yet. Try again."),
   });
 
   if (roundId === null) {
-    return <EmptyState title='No active round' description='Create a round in Setup before scoring.' />;
+    return <EmptyState title='No round yet' description='Start a round in Setup, then come back to score.' />;
   }
 
   if (aggregate.isPending || leaderboard.isPending) {
@@ -172,19 +177,19 @@ export function ScoringRoute(): JSX.Element {
   }
 
   if (aggregate.isError) {
-    return <ErrorState message='Failed to load round aggregate for scoring.' />;
+    return <ErrorState message="Couldn't load scoring details right now." />;
   }
 
   if (leaderboard.isError) {
-    return <ErrorState message='Failed to load leaderboard data for scoring.' />;
+    return <ErrorState message="Couldn't load the leaderboard right now." />;
   }
 
   if (aggregate.data.players.length === 0) {
-    return <EmptyState title='No players' description='Add players in Setup before scoring.' />;
+    return <EmptyState title='No players yet' description='Add players in Setup before scoring.' />;
   }
 
   if (!aggregate.data.course) {
-    return <EmptyState title='No course assigned' description='Assign a course in Setup before scoring.' />;
+    return <EmptyState title='No course selected' description='Pick a course in Setup before scoring.' />;
   }
 
   const playerMap = new Map(aggregate.data.players.map((player) => [player.id, player.display_name]));
@@ -229,8 +234,13 @@ export function ScoringRoute(): JSX.Element {
           ? 'saved'
           : 'idle';
 
+  const selectedShotType = contributionForm.watch('shot_type') ?? '';
+  const quickShotTypes = PRIMARY_SHOT_TYPES.filter((type) =>
+    SHOT_TYPE_OPTIONS.includes(type as (typeof SHOT_TYPE_OPTIONS)[number]),
+  );
+
   return (
-    <div className='space-y-6'>
+    <div className='space-y-5 pb-4'>
       <Card>
         <HoleHeader
           currentHole={currentHole}
@@ -241,7 +251,7 @@ export function ScoringRoute(): JSX.Element {
           parSnapshot={currentHoleScore?.par_snapshot ?? null}
         />
 
-        <div className='mt-4 flex flex-wrap items-center gap-2 sm:gap-3'>
+        <div className='mt-4 flex flex-wrap items-center gap-2'>
           <Button
             type='button'
             variant='outline'
@@ -249,6 +259,7 @@ export function ScoringRoute(): JSX.Element {
             disabled={currentHole <= 1}
             className='min-h-11'
           >
+            <ChevronLeftIcon className='mr-1 h-4 w-4' />
             Previous Hole
           </Button>
           <Button
@@ -259,12 +270,13 @@ export function ScoringRoute(): JSX.Element {
             className='min-h-11'
           >
             Next Hole
+            <ChevronRightIcon className='ml-1 h-4 w-4' />
           </Button>
           <SaveStatusBadge
             status={overallStatus}
             savedAt={Math.max(scoreSavedAt ?? 0, contributionSavedAt ?? 0) || null}
             errorMessage={scoreError ?? contributionError}
-            idleLabel='Waiting for changes'
+            idleLabel='Ready to score'
           />
           <Button
             type='button'
@@ -278,210 +290,267 @@ export function ScoringRoute(): JSX.Element {
         </div>
 
         <div className='mt-4 grid gap-3 text-sm sm:grid-cols-3'>
-          <div className='rounded-md border border-slate-700/70 bg-slate-900/40 px-3 py-2'>
-            <p className='text-slate-400'>Running score</p>
-            <p className='text-lg font-semibold'>{holeScoreTotal}</p>
+          <div className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2'>
+            <p className='text-[var(--color-text-muted)]'>Running score</p>
+            <p className='text-lg font-semibold text-[var(--color-text)]'>{holeScoreTotal}</p>
           </div>
-          <div className='rounded-md border border-slate-700/70 bg-slate-900/40 px-3 py-2'>
-            <p className='text-slate-400'>Holes completed</p>
-            <p className='text-lg font-semibold'>
+          <div className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2'>
+            <p className='text-[var(--color-text-muted)]'>Holes completed</p>
+            <p className='text-lg font-semibold text-[var(--color-text)]'>
               {holesCompleted}/{totalHoles}
             </p>
           </div>
-          <div className='rounded-md border border-slate-700/70 bg-slate-900/40 px-3 py-2'>
-            <p className='text-slate-400'>Contributions on hole</p>
-            <p className='text-lg font-semibold'>{holeContributions.data?.length ?? 0}</p>
+          <div className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2'>
+            <p className='text-[var(--color-text-muted)]'>Contributions on this hole</p>
+            <p className='text-lg font-semibold text-[var(--color-text)]'>{holeContributions.data?.length ?? 0}</p>
           </div>
         </div>
       </Card>
 
-      <Card>
-        <CardTitle>Hole {currentHole} Score</CardTitle>
-        <CardDescription>Capture score and hole completion for the current hole.</CardDescription>
+      <div className='grid gap-5 lg:grid-cols-[1.2fr_1fr]'>
+        <div className='space-y-5'>
+          <Card>
+            <CardTitle>Hole Score</CardTitle>
+            <CardDescription>Set score and par, then mark the hole complete.</CardDescription>
 
-        <form
-          className='mt-4 grid gap-3'
-          onSubmit={scoreForm.handleSubmit((values) => upsertHoleScore.mutate(values))}
-        >
-          <div className='grid gap-3 sm:grid-cols-2'>
-            <Input
-              type='number'
-              min={1}
-              max={20}
-              disabled={isLocked}
-              placeholder='Score'
-              {...scoreForm.register('score', { setValueAs: toNullableNumber })}
-            />
-            <Input
-              type='number'
-              min={1}
-              max={10}
-              disabled={isLocked}
-              placeholder='Par snapshot'
-              {...scoreForm.register('par_snapshot', { setValueAs: toNullableNumber })}
-            />
-          </div>
-
-          <div className='flex flex-wrap items-center gap-2'>
-            <Button type='submit' variant='primary' disabled={isLocked || upsertHoleScore.isPending} className='min-h-11'>
-              {upsertHoleScore.isPending ? 'Saving...' : 'Save Hole Score'}
-            </Button>
-            <SaveStatusBadge
-              status={scoreStatus}
-              errorMessage={scoreError}
-              savedAt={scoreSavedAt}
-              idleLabel='No score changes yet'
-            />
-          </div>
-
-          <label className='col-span-full flex items-center gap-2 text-sm text-zinc-300'>
-            <input className='h-4 w-4' disabled={isLocked} type='checkbox' {...scoreForm.register('completed')} />
-            Mark hole as completed
-          </label>
-        </form>
-
-        {isLocked ? (
-          <p className='mt-2 rounded-md border border-slate-700/70 bg-slate-900/40 px-3 py-2 text-sm text-zinc-400'>
-            Round is completed and locked for edits.
-          </p>
-        ) : null}
-        {scoreError ? <p className='mt-2 rounded-md border border-rose-300/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200'>{scoreError}</p> : null}
-      </Card>
-
-      <Card>
-        <CardTitle>Shot Contributions</CardTitle>
-        <CardDescription>Select one or more players who contributed to a shot.</CardDescription>
-
-        <form
-          className='mt-4 grid gap-3'
-          onSubmit={contributionForm.handleSubmit((values) => addContributions.mutate(values))}
-        >
-          <div className='grid gap-3 sm:grid-cols-2'>
-            <Input
-              type='number'
-              min={1}
-              max={20}
-              disabled={isLocked}
-              placeholder='Shot number'
-              {...contributionForm.register('shot_number', { valueAsNumber: true })}
-            />
-            <Input disabled={isLocked} placeholder='Shot type (optional)' {...contributionForm.register('shot_type')} />
-          </div>
-
-          <div className='grid gap-2 sm:grid-cols-2'>
-            {aggregate.data.players.map((player) => {
-              const selected = selectedPlayerIds.includes(player.id);
-              return (
-                <label
-                  className={`flex cursor-pointer items-center justify-between rounded-md border px-3 py-2 text-sm ${
-                    selected
-                      ? 'border-cyan-300/50 bg-cyan-400/10 text-cyan-100'
-                      : 'border-zinc-800 bg-slate-900/35'
-                  }`}
-                  key={player.id}
-                >
-                  <span>{player.display_name}</span>
-                  <input
-                    type='checkbox'
-                    checked={selected}
-                    disabled={isLocked}
-                    onChange={(event) => {
-                      setSelectedPlayerIds((previous) =>
-                        event.target.checked
-                          ? [...previous, player.id]
-                          : previous.filter((id) => id !== player.id),
-                      );
-                    }}
-                  />
-                </label>
-              );
-            })}
-          </div>
-
-          <Button
-            type='submit'
-            variant='primary'
-            className='min-h-11 sm:max-w-xs'
-            disabled={isLocked || addContributions.isPending || selectedPlayerIds.length === 0}
-          >
-            {addContributions.isPending ? 'Saving Contributions...' : 'Add Contributions'}
-          </Button>
-          <SaveStatusBadge
-            status={contributionStatus}
-            errorMessage={contributionError}
-            savedAt={contributionSavedAt}
-            idleLabel='No contribution changes yet'
-          />
-        </form>
-
-        {contributionError ? (
-          <p className='mt-2 rounded-md border border-rose-300/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200'>
-            {contributionError}
-          </p>
-        ) : null}
-
-        <div className='mt-4 space-y-2'>
-          {holeContributions.isPending ? (
-            <div className='rounded-md border border-sky-300/30 bg-sky-400/10 px-3 py-2 text-sm text-sky-100'>
-              Loading contributions...
-            </div>
-          ) : null}
-          {holeContributions.isError ? (
-            <ErrorState message='Failed to load contributions for this hole.' />
-          ) : null}
-          {!holeContributions.isPending && !holeContributions.isError && groupedContributions.length === 0 ? (
-            <EmptyState title='No contributions yet' description='Add a shot contribution to start tracking.' />
-          ) : null}
-
-          {groupedContributions.map((group) => (
-            <div className='rounded-md border border-zinc-800 bg-slate-900/35 px-3 py-2' key={group.shotNumber}>
-              <p className='text-sm font-medium'>Shot {group.shotNumber}</p>
-              <div className='mt-2 space-y-2'>
-                {group.rows.map((row) => (
-                  <div className='flex items-center justify-between text-sm' key={row.id}>
-                    <span>
-                      {playerMap.get(row.round_player_id) ?? `Player ${row.round_player_id}`}
-                      {row.shot_type ? ` (${row.shot_type})` : ''}
-                    </span>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      disabled={isLocked || deleteContribution.isPending}
-                      onClick={() =>
-                        deleteContribution.mutate({
-                          shotNumber: row.shot_number,
-                          playerId: row.round_player_id,
-                        })
-                      }
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card>
-        <CardTitle>Leaderboard Snapshot</CardTitle>
-        <CardDescription>Latest contribution totals while scoring.</CardDescription>
-
-        <ol className='mt-4 space-y-2'>
-          {leaderboard.data.map((entry, index) => (
-            <li
-              className='flex items-center justify-between rounded-md border border-zinc-800 px-3 py-2 text-sm'
-              key={entry.round_player_id}
+            <form
+              className='mt-4 grid gap-3'
+              onSubmit={scoreForm.handleSubmit((values) => upsertHoleScore.mutate(values))}
             >
-              <span>
-                #{index + 1} {entry.display_name}
+              <div className='grid gap-3 sm:grid-cols-2'>
+                <div className='space-y-2'>
+                  <label className='text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]'>Score</label>
+                  <Input
+                    type='number'
+                    min={1}
+                    max={20}
+                    disabled={isLocked}
+                    placeholder='Score'
+                    {...scoreForm.register('score', { setValueAs: toNullableNumber })}
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <label className='text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]'>Par</label>
+                  <Input
+                    type='number'
+                    min={1}
+                    max={10}
+                    disabled={isLocked}
+                    placeholder='Par snapshot'
+                    {...scoreForm.register('par_snapshot', { setValueAs: toNullableNumber })}
+                  />
+                </div>
+              </div>
+
+              <label className='col-span-full flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-3 text-sm text-[var(--color-text)]'>
+                <input className='h-4 w-4' disabled={isLocked} type='checkbox' {...scoreForm.register('completed')} />
+                Mark hole as completed
+              </label>
+
+              <div className='flex flex-wrap items-center gap-2'>
+                <Button
+                  type='submit'
+                  variant='primary'
+                  disabled={isLocked || upsertHoleScore.isPending}
+                  className='min-h-11'
+                >
+                  {upsertHoleScore.isPending ? 'Saving...' : 'Save Hole Score'}
+                </Button>
+                <SaveStatusBadge
+                  status={scoreStatus}
+                  errorMessage={scoreError}
+                  savedAt={scoreSavedAt}
+                  idleLabel='No score changes yet'
+                />
+              </div>
+            </form>
+
+            {isLocked ? (
+              <p className='mt-2 rounded-md border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] px-3 py-2 text-sm text-[var(--color-warning-text)]'>
+                This round is complete and locked.
+              </p>
+            ) : null}
+          </Card>
+
+          <Card>
+            <CardTitle>
+              <span className='inline-flex items-center gap-2'>
+                <TargetIcon className='h-4 w-4 text-[var(--color-primary)]' />
+                Shot Contributions
               </span>
-              <span className='font-semibold'>{entry.total_contributions}</span>
-            </li>
-          ))}
-        </ol>
-      </Card>
+            </CardTitle>
+            <CardDescription>Pick a shot, choose players, and save.</CardDescription>
+
+            <form
+              className='mt-4 grid gap-4'
+              onSubmit={contributionForm.handleSubmit((values) => addContributions.mutate(values))}
+            >
+              <div className='grid gap-3 sm:grid-cols-2'>
+                <div className='space-y-2'>
+                  <label className='text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]'>Shot Number</label>
+                  <Input
+                    type='number'
+                    min={1}
+                    max={20}
+                    disabled={isLocked}
+                    placeholder='Shot number'
+                    {...contributionForm.register('shot_number', { valueAsNumber: true })}
+                  />
+                </div>
+                <ShotTypeSelect
+                  value={selectedShotType}
+                  disabled={isLocked}
+                  onChange={(value) => contributionForm.setValue('shot_type', value, { shouldDirty: true })}
+                />
+              </div>
+
+              <div className='space-y-2'>
+                <p className='text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]'>Quick Shot Types</p>
+                <div className='flex flex-wrap gap-2'>
+                  {quickShotTypes.map((type) => {
+                    const selected = selectedShotType === type;
+                    return (
+                      <button
+                        key={type}
+                        type='button'
+                        onClick={() =>
+                          contributionForm.setValue('shot_type', selected ? '' : type, {
+                            shouldDirty: true,
+                          })
+                        }
+                        disabled={isLocked}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                          selected
+                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)]'
+                            : 'border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface)]'
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className='space-y-2'>
+                <p className='text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]'>Who contributed?</p>
+                <div className='grid gap-2 sm:grid-cols-2'>
+                  {aggregate.data.players.map((player) => {
+                    const selected = selectedPlayerIds.includes(player.id);
+                    return (
+                      <label
+                        className={`flex min-h-11 cursor-pointer items-center justify-between rounded-xl border px-3 py-2 text-sm ${
+                          selected
+                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/15 text-[var(--color-text)]'
+                            : 'border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-text)]'
+                        }`}
+                        key={player.id}
+                      >
+                        <span>{player.display_name}</span>
+                        <input
+                          type='checkbox'
+                          checked={selected}
+                          disabled={isLocked}
+                          onChange={(event) => {
+                            setSelectedPlayerIds((previous) =>
+                              event.target.checked
+                                ? [...previous, player.id]
+                                : previous.filter((id) => id !== player.id),
+                            );
+                          }}
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+                {selectedPlayerIds.length === 0 ? (
+                  <p className='text-xs text-[var(--color-text-muted)]'>Select at least one player.</p>
+                ) : null}
+              </div>
+
+              <div className='flex flex-wrap items-center gap-2'>
+                <Button
+                  type='submit'
+                  variant='primary'
+                  className='min-h-11 sm:max-w-xs'
+                  disabled={isLocked || addContributions.isPending || selectedPlayerIds.length === 0}
+                >
+                  {addContributions.isPending ? 'Saving...' : 'Add Contributions'}
+                </Button>
+                <SaveStatusBadge
+                  status={contributionStatus}
+                  errorMessage={contributionError}
+                  savedAt={contributionSavedAt}
+                  idleLabel='No contribution changes yet'
+                />
+              </div>
+            </form>
+
+            <div className='mt-4 space-y-2'>
+              {holeContributions.isPending ? (
+                <StatusBadge tone='info'>Loading contributions...</StatusBadge>
+              ) : null}
+              {holeContributions.isError ? (
+                <ErrorState message="Couldn't load contributions for this hole." />
+              ) : null}
+              {!holeContributions.isPending && !holeContributions.isError && groupedContributions.length === 0 ? (
+                <EmptyState title='No contributions yet' description='Add a shot contribution to get started.' />
+              ) : null}
+
+              {groupedContributions.map((group) => (
+                <div
+                  className='rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2'
+                  key={group.shotNumber}
+                >
+                  <p className='text-sm font-medium text-[var(--color-text)]'>Shot {group.shotNumber}</p>
+                  <div className='mt-2 space-y-2'>
+                    {group.rows.map((row) => (
+                      <div className='flex items-center justify-between text-sm' key={row.id}>
+                        <span className='text-[var(--color-text)]'>
+                          {playerMap.get(row.round_player_id) ?? `Player ${row.round_player_id}`}
+                          {row.shot_type ? ` (${row.shot_type})` : ''}
+                        </span>
+                        <Button
+                          type='button'
+                          variant='outline'
+                          disabled={isLocked || deleteContribution.isPending}
+                          onClick={() =>
+                            deleteContribution.mutate({
+                              shotNumber: row.shot_number,
+                              playerId: row.round_player_id,
+                            })
+                          }
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        <Card>
+          <CardTitle>Leaderboard Snapshot</CardTitle>
+          <CardDescription>Live totals while you score this round.</CardDescription>
+
+          <ol className='mt-4 space-y-2'>
+            {leaderboard.data.map((entry, index) => (
+              <li
+                className='flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-sm'
+                key={entry.round_player_id}
+              >
+                <span className='text-[var(--color-text)]'>
+                  #{index + 1} {entry.display_name}
+                </span>
+                <span className='font-semibold text-[var(--color-text)]'>{entry.total_contributions}</span>
+              </li>
+            ))}
+          </ol>
+        </Card>
+      </div>
 
       <StickyActionBar>
         <Button
@@ -491,8 +560,12 @@ export function ScoringRoute(): JSX.Element {
           disabled={currentHole <= 1}
           className='min-h-11 flex-1'
         >
+          <ChevronLeftIcon className='mr-1 h-4 w-4' />
           Prev
         </Button>
+        <StatusBadge tone='neutral' className='shrink-0'>
+          Hole {currentHole}/{totalHoles}
+        </StatusBadge>
         <Button
           type='button'
           variant='primary'
@@ -501,6 +574,7 @@ export function ScoringRoute(): JSX.Element {
           className='min-h-11 flex-1'
         >
           Next
+          <ChevronRightIcon className='ml-1 h-4 w-4' />
         </Button>
       </StickyActionBar>
     </div>

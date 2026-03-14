@@ -60,7 +60,7 @@ Each implementation prompt must end with:
 
 - [x] foundation
 - [x] setup redesign
-- [ ] scoring redesign
+- [x] scoring redesign
 - [ ] leaderboard and summary redesign
 - [ ] dark/light mode verification
 - [ ] docs refresh complete
