@@ -62,5 +62,5 @@ Each implementation prompt must end with:
 - [x] setup redesign
 - [x] scoring redesign
 - [x] leaderboard and summary redesign
-- [ ] dark/light mode verification
-- [ ] docs refresh complete
+- [x] dark/light mode verification
+- [x] docs refresh complete

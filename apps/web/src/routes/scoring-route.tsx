@@ -6,7 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
 import { HoleHeader } from '@/components/scoring/hole-header';
+import { SaveStatusBadge as LegacySaveStatusBadge } from '@/components/scoring/save-status-badge';
 import { SHOT_TYPE_OPTIONS, ShotTypeSelect } from '@/components/scoring/shot-type-select';
+import { StickyActionBar as LegacyStickyActionBar } from '@/components/scoring/sticky-action-bar';
 import { EmptyState } from '@/components/state/empty-state';
 import { ErrorState } from '@/components/state/error-state';
 import { LoadingState } from '@/components/state/loading-state';
@@ -16,7 +18,6 @@ import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { ChevronLeftIcon, ChevronRightIcon, TargetIcon } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { StickyActionBar } from '@/components/ui/sticky-action-bar';
 import { apiClient } from '@/lib/api';
 import { useLeaderboardQuery, useRoundAggregateQuery } from '@/lib/queries';
 import { useRoundSessionStore } from '@/store/round-session';
@@ -214,26 +215,6 @@ export function ScoringRoute(): JSX.Element {
           ? 'saved'
           : 'idle';
 
-  const scoreStatus: SaveStatus = !online
-    ? 'offline'
-    : scoreError
-      ? 'error'
-      : upsertHoleScore.isPending
-        ? 'saving'
-        : scoreSavedAt
-          ? 'saved'
-          : 'idle';
-
-  const contributionStatus: SaveStatus = !online
-    ? 'offline'
-    : contributionError
-      ? 'error'
-      : addContributions.isPending || deleteContribution.isPending
-        ? 'saving'
-        : contributionSavedAt
-          ? 'saved'
-          : 'idle';
-
   const selectedShotType = contributionForm.watch('shot_type') ?? '';
   const quickShotTypes = PRIMARY_SHOT_TYPES.filter((type) =>
     SHOT_TYPE_OPTIONS.includes(type as (typeof SHOT_TYPE_OPTIONS)[number]),
@@ -356,9 +337,9 @@ export function ScoringRoute(): JSX.Element {
                 >
                   {upsertHoleScore.isPending ? 'Saving...' : 'Save Hole Score'}
                 </Button>
-                <SaveStatusBadge
-                  status={scoreStatus}
-                  errorMessage={scoreError}
+                <LegacySaveStatusBadge
+                  isSaving={upsertHoleScore.isPending}
+                  error={scoreError}
                   savedAt={scoreSavedAt}
                   idleLabel='No score changes yet'
                 />
@@ -477,9 +458,9 @@ export function ScoringRoute(): JSX.Element {
                 >
                   {addContributions.isPending ? 'Saving...' : 'Add Contributions'}
                 </Button>
-                <SaveStatusBadge
-                  status={contributionStatus}
-                  errorMessage={contributionError}
+                <LegacySaveStatusBadge
+                  isSaving={addContributions.isPending || deleteContribution.isPending}
+                  error={contributionError}
                   savedAt={contributionSavedAt}
                   idleLabel='No contribution changes yet'
                 />
@@ -552,7 +533,7 @@ export function ScoringRoute(): JSX.Element {
         </Card>
       </div>
 
-      <StickyActionBar>
+      <LegacyStickyActionBar>
         <Button
           type='button'
           variant='outline'
@@ -576,7 +557,7 @@ export function ScoringRoute(): JSX.Element {
           Next
           <ChevronRightIcon className='ml-1 h-4 w-4' />
         </Button>
-      </StickyActionBar>
+      </LegacyStickyActionBar>
     </div>
   );
 }

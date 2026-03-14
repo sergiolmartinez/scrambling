@@ -1,4 +1,4 @@
-import { RankEntryRow } from '@/components/leaderboard/rank-entry-row';
+import { RankRow } from '@/components/leaderboard/rank-row';
 
 type LeaderboardTableProps = {
   entries: Array<{
@@ -24,7 +24,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps): JSX.Elemen
         const isTied = entry.total_contributions === topScore && tiedLeadersCount > 1;
 
         return (
-          <RankEntryRow
+          <RankRow
             key={entry.round_player_id}
             rankLabel={rankLabel}
             displayName={entry.display_name}

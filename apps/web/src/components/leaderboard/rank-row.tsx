@@ -16,32 +16,14 @@ export function RankRow({
   isTied,
 }: RankRowProps): JSX.Element {
   return (
-    <li
-      className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm ${
-        isLeader
-          ? 'border-[var(--color-success-border)] bg-[var(--color-success-bg)]'
-          : 'border-[var(--color-border)] bg-[var(--color-surface-muted)]'
-      }`}
-    >
-      <div className='flex min-w-0 items-center gap-3'>
-        <span
-          className={`inline-flex h-7 min-w-8 items-center justify-center rounded-full border px-2 text-xs font-semibold ${
-            isLeader
-              ? 'border-[var(--color-success-border)] bg-[var(--color-success-bg)] text-[var(--color-success-text)]'
-              : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]'
-          }`}
-        >
-          #{rankLabel}
-        </span>
-        <span className='truncate text-sm font-semibold text-slate-100'>
-          {displayName}
-          {isLeader ? ' · Leader' : ''}
-          {isTied ? ' · Tied' : ''}
-        </span>
-      </div>
-      <span className='text-sm font-semibold text-slate-100'>
-        {totalContributions} ({sharePercent}%)
-      </span>
-    </li>
+    <RankEntryRow
+      rankLabel={rankLabel}
+      displayName={displayName}
+      totalContributions={totalContributions}
+      sharePercent={sharePercent}
+      isLeader={isLeader}
+      isTied={isTied}
+    />
   );
 }
+import { RankEntryRow } from '@/components/leaderboard/rank-entry-row';
