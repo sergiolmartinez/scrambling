@@ -49,6 +49,8 @@ Create environment files:
 - `apps/api/.env` from `apps/api/.env.example`
 - `apps/web/.env` from `apps/web/.env.example`
 
+Auth/session settings are configured in `apps/api/.env.example` (`AUTH_SESSION_*` and `AUTH_PASSWORD_HASH_ITERATIONS`).
+
 ## Run
 
 ### Web

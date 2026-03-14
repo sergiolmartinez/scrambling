@@ -1,3 +1,4 @@
+from app.schemas.auth import AuthSignInRequest, AuthSignUpRequest, AuthUserRead
 from app.schemas.domain import (
     CourseAssignRequest,
     CourseCreate,
@@ -24,6 +25,9 @@ from app.schemas.domain import (
 )
 
 __all__ = [
+    "AuthSignInRequest",
+    "AuthSignUpRequest",
+    "AuthUserRead",
     "RoundStatus",
     "RoundCreate",
     "RoundRead",

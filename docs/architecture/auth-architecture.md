@@ -86,7 +86,7 @@ Scrambling uses secure HTTP-only cookie-based authentication for the browser cli
 
 - user signs up or signs in with email and password
 - backend validates credentials
-- backend sets a secure HTTP-only auth cookie
+- backend sets a secure HTTP-only auth cookie (`scrambling_session` by default)
 - frontend restores session state by calling `GET /api/v1/auth/me`
 - protected routes require authenticated user context
 
@@ -96,3 +96,15 @@ Scrambling uses secure HTTP-only cookie-based authentication for the browser cli
 - cookies should be Secure in production
 - SameSite should be configured appropriately
 - password hashes must use a modern algorithm
+
+## Backend Implementation Notes (Auth 01)
+
+- Session model: server-side session rows in `auth_sessions` keyed by hashed opaque tokens.
+- Cookie model: opaque session token in an HTTP-only cookie; session token hash is stored in DB.
+- Password model: PBKDF2-HMAC-SHA256 with per-user salt and configurable iteration count.
+- Initial auth API:
+  - `POST /api/v1/auth/sign-up`
+  - `POST /api/v1/auth/sign-in`
+  - `POST /api/v1/auth/sign-out`
+  - `GET /api/v1/auth/me`
+- `GET /api/v1/auth/me` returns `401 unauthorized` when no valid active session exists.
