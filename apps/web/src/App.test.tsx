@@ -1,10 +1,26 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import { AppLayout } from '@/app/layout';
 import { ThemeProvider } from '@/app/theme-provider';
+
+vi.mock('@/app/auth-state', () => ({
+  useAuth: () => ({
+    user: { display_name: 'Sergio' },
+    isLoading: false,
+    isAuthenticated: true,
+    refreshSession: vi.fn(),
+    clearSession: vi.fn(),
+  }),
+}));
+
+vi.mock('@/lib/api', () => ({
+  apiClient: {
+    signOut: vi.fn(),
+  },
+}));
 
 describe('AppLayout', () => {
   it('renders shell navigation labels', () => {

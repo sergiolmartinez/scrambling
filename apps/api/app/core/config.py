@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     golfcourseapi_api_key: str = ""
     golfcourseapi_timeout_seconds: float = 10.0
     golfcourseapi_cache_ttl_seconds: int = 300
+    auth_session_cookie_name: str = "scrambling_session"
+    auth_session_secret: str = "change-me-in-production"
+    auth_session_ttl_hours: int = 336
+    auth_password_hash_iterations: int = 600000
 
     def cors_origin_list(self) -> list[str]:
         raw_value = self.cors_origins.strip()

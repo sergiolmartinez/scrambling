@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.integrations.course_provider import (
@@ -6,6 +7,7 @@ from app.integrations.course_provider import (
     NormalizedCourseSummary,
 )
 from app.integrations.golfcourseapi import GolfCourseApiClientError
+from app.models import Round
 
 
 class StubCourseProvider:
@@ -59,6 +61,19 @@ class StubCourseProvider:
         )
 
 
+@pytest.fixture(autouse=True)
+def authenticate_client(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/auth/sign-up",
+        json={
+            "email": "round-tests@example.com",
+            "display_name": "Round Tests",
+            "password": "supersecure123",
+        },
+    )
+    assert response.status_code == 201
+
+
 def test_round_lifecycle_and_player_management(client: TestClient) -> None:
     created_round = client.post("/api/v1/rounds", json={}).json()
     round_id = created_round["id"]
@@ -94,6 +109,68 @@ def test_round_lifecycle_and_player_management(client: TestClient) -> None:
         json={"display_name": "Late", "sort_order": 2},
     )
     assert locked_response.status_code == 423
+
+
+def test_new_round_is_owned_by_authenticated_user(client: TestClient, db_session) -> None:
+    me = client.get("/api/v1/auth/me")
+    assert me.status_code == 200
+    user_id = me.json()["id"]
+
+    created_round = client.post("/api/v1/rounds", json={})
+    round_id = created_round.json()["id"]
+
+    round_obj = db_session.get(Round, round_id)
+    assert round_obj is not None
+    assert round_obj.owner_user_id == user_id
+
+
+def test_round_owner_scope_blocks_other_authenticated_user(client: TestClient) -> None:
+    created_round = client.post("/api/v1/rounds", json={})
+    round_id = created_round.json()["id"]
+
+    sign_out = client.post("/api/v1/auth/sign-out")
+    assert sign_out.status_code == 204
+
+    other_user = client.post(
+        "/api/v1/auth/sign-up",
+        json={
+            "email": "other-user@example.com",
+            "display_name": "Other User",
+            "password": "supersecure123",
+        },
+    )
+    assert other_user.status_code == 201
+
+    forbidden_get = client.get(f"/api/v1/rounds/{round_id}")
+    assert forbidden_get.status_code == 404
+    assert forbidden_get.json()["code"] == "not_found"
+
+    forbidden_mutation = client.post(
+        f"/api/v1/rounds/{round_id}/players",
+        json={"display_name": "Late", "sort_order": 1},
+    )
+    assert forbidden_mutation.status_code == 404
+    assert forbidden_mutation.json()["code"] == "not_found"
+
+
+def test_ownerless_round_is_claimed_on_first_authenticated_access(
+    client: TestClient, db_session
+) -> None:
+    ownerless_round = Round(notes="legacy round")
+    db_session.add(ownerless_round)
+    db_session.commit()
+    db_session.refresh(ownerless_round)
+
+    me = client.get("/api/v1/auth/me")
+    assert me.status_code == 200
+    user_id = me.json()["id"]
+
+    loaded = client.get(f"/api/v1/rounds/{ownerless_round.id}")
+    assert loaded.status_code == 200
+
+    refreshed = db_session.get(Round, ownerless_round.id)
+    assert refreshed is not None
+    assert refreshed.owner_user_id == user_id
 
 
 def test_course_search_detail_assign_and_round_aggregate(client: TestClient, monkeypatch) -> None:

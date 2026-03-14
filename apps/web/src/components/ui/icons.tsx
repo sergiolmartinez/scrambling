@@ -145,3 +145,41 @@ export function TrophyIcon(props: IconProps): JSX.Element {
     </svg>
   );
 }
+
+export function LogOutIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <path d='M14.5 17.5 20 12l-5.5-5.5' />
+      <path d='M20 12H9.5' />
+      <path d='M10.5 20H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4.5' />
+    </svg>
+  );
+}
+
+export function LockIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <rect x='5' y='10' width='14' height='10' rx='2' />
+      <path d='M8.5 10V8a3.5 3.5 0 1 1 7 0v2' />
+    </svg>
+  );
+}
+
+export function UserCircleIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <circle cx='12' cy='8.2' r='3.2' />
+      <path d='M6.2 18.3a6.2 6.2 0 0 1 11.6 0' />
+      <circle cx='12' cy='12' r='9' />
+    </svg>
+  );
+}
+
+export function SettingsIcon(props: IconProps): JSX.Element {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.8' {...props}>
+      <circle cx='12' cy='12' r='2.6' />
+      <path d='M19.3 13.1a7.6 7.6 0 0 0 .1-2.2l2-1.5-2-3.4-2.4 1a7.8 7.8 0 0 0-1.8-1L14.8 3h-5.6l-.4 3a7.8 7.8 0 0 0-1.8 1l-2.4-1-2 3.4 2 1.5a7.6 7.6 0 0 0 .1 2.2l-2 1.5 2 3.4 2.4-1a7.8 7.8 0 0 0 1.8 1l.4 3h5.6l.4-3a7.8 7.8 0 0 0 1.8-1l2.4 1 2-3.4-2-1.5Z' />
+    </svg>
+  );
+}

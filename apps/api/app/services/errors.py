@@ -36,3 +36,8 @@ class ConflictError(DomainError):
 class ExternalServiceError(DomainError):
     def __init__(self, message: str, details: dict[str, str] | None = None) -> None:
         super().__init__("external_service_error", message, status.HTTP_502_BAD_GATEWAY, details)
+
+
+class UnauthorizedError(DomainError):
+    def __init__(self, message: str = "Authentication required.") -> None:
+        super().__init__("unauthorized", message, status.HTTP_401_UNAUTHORIZED)

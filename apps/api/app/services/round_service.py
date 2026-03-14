@@ -12,6 +12,7 @@ from app.models import (
     RoundPlayer,
     RoundStatus,
     ShotContribution,
+    User,
 )
 from app.schemas import (
     CourseAssignRequest,
@@ -39,9 +40,13 @@ from app.services.errors import (
 
 class RoundService:
     def __init__(
-        self, db: Session, course_provider: CourseProvider | None = None
+        self,
+        db: Session,
+        course_provider: CourseProvider | None = None,
+        current_user: User | None = None,
     ) -> None:
         self.db = db
+        self.current_user = current_user
         self.course_import_service = CourseImportService(db, course_provider=course_provider)
 
     def create_course(self, payload: CourseCreate) -> Course:
@@ -63,7 +68,10 @@ class RoundService:
         return self.course_import_service.hydrate_course_if_needed(course)
 
     def create_round(self, payload: RoundCreate) -> Round:
-        round_obj = Round(notes=payload.notes)
+        round_obj = Round(
+            notes=payload.notes,
+            owner_user_id=self.current_user.id if self.current_user is not None else None,
+        )
         self.db.add(round_obj)
         self.db.commit()
         self.db.refresh(round_obj)
@@ -72,6 +80,14 @@ class RoundService:
     def get_round(self, round_id: int) -> Round:
         round_obj = self.db.get(Round, round_id)
         if round_obj is None:
+            raise NotFoundError("Round not found.", {"round_id": str(round_id)})
+
+        if self.current_user is not None and round_obj.owner_user_id is None:
+            round_obj.owner_user_id = self.current_user.id
+            self.db.commit()
+            self.db.refresh(round_obj)
+
+        if self.current_user is not None and round_obj.owner_user_id != self.current_user.id:
             raise NotFoundError("Round not found.", {"round_id": str(round_id)})
         return round_obj
 
