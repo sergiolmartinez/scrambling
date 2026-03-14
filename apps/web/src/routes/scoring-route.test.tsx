@@ -133,9 +133,7 @@ describe('ScoringRoute', () => {
     await waitFor(() => expect(screen.getByText(/hole 1 of 3/i)).toBeInTheDocument());
 
     fireEvent.change(screen.getByPlaceholderText('Shot number'), { target: { value: '2' } });
-    fireEvent.change(screen.getByPlaceholderText('Shot type (optional)'), {
-      target: { value: 'drive' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: /^drive$/i }));
 
     const aliceLabel = screen.getByText('Alice').closest('label');
     const bobLabel = screen.getByText('Bob').closest('label');
@@ -150,7 +148,7 @@ describe('ScoringRoute', () => {
       expect(mocks.addShotContributions).toHaveBeenCalledWith(99, 1, {
         shot_number: 2,
         round_player_ids: [1, 2],
-        shot_type: 'drive',
+        shot_type: 'Drive',
       }),
     );
   });

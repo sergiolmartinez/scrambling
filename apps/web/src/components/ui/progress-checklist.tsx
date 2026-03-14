@@ -1,3 +1,6 @@
+import { CheckCircleIcon } from '@/components/ui/icons';
+import { cn } from '@/lib/utils';
+
 type ProgressChecklistItem = {
   label: string;
   complete: boolean;
@@ -9,17 +12,21 @@ type ProgressChecklistProps = {
 
 export function ProgressChecklist({ items }: ProgressChecklistProps): JSX.Element {
   return (
-    <ul className='flex flex-wrap gap-2' aria-label='Round setup progress'>
-      {items.map((item) => (
+    <ul className='grid gap-2 sm:grid-cols-3' aria-label='Round setup progress'>
+      {items.map((item, index) => (
         <li
-          className={`rounded-full border px-3 py-1 text-xs font-medium ${
+          className={cn(
+            'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm',
             item.complete
-              ? 'border-emerald-300/40 bg-emerald-400/10 text-emerald-200'
-              : 'border-slate-600/60 bg-slate-900/60 text-slate-300'
-          }`}
+              ? 'border-[var(--color-success-border)] bg-[var(--color-success-bg)] text-[var(--color-success-text)]'
+              : 'border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-text-muted)]',
+          )}
           key={item.label}
         >
-          {item.complete ? 'Done:' : 'Pending:'} {item.label}
+          <span className='inline-flex h-6 w-6 items-center justify-center rounded-full border border-current/30 text-[11px] font-semibold'>
+            {item.complete ? <CheckCircleIcon className='h-3.5 w-3.5' /> : index + 1}
+          </span>
+          <span className='font-medium'>{item.label}</span>
         </li>
       ))}
     </ul>

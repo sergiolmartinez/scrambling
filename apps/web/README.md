@@ -16,6 +16,9 @@ React + Vite web shell for the Scrambling MVP frontend.
 - progress-aware shell navigation across setup, scoring, leaderboard, and summary
 - setup flow includes readiness checklist for round/course/player completion
 - visual system refreshed for clearer hierarchy and mobile responsiveness
+- global theme support: light, dark, and system preference
+- reusable status patterns for loading, empty, error, and save/sync/offline feedback
+- redesigned leaderboard and summary flows with clearer rank hierarchy, tie messaging, and completion/lock context
 
 ## Commands
 

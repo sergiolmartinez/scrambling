@@ -67,10 +67,10 @@ describe('SetupRoute', () => {
     });
 
     renderSetup();
-    fireEvent.click(screen.getByRole('button', { name: /create round/i }));
+    fireEvent.click(screen.getByRole('button', { name: /start round/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/current round id: 42/i)).toBeInTheDocument();
+      expect(useRoundSessionStore.getState().roundId).toBe(42);
     });
   });
 
@@ -92,7 +92,7 @@ describe('SetupRoute', () => {
     renderSetup();
 
     await waitFor(() => {
-      expect(screen.getByText(/maximum of 4 players reached/i)).toBeInTheDocument();
+      expect(screen.getByText(/you have 4 players/i)).toBeInTheDocument();
     });
 
     expect(screen.getByRole('button', { name: /add player/i })).toBeDisabled();
@@ -146,7 +146,7 @@ describe('SetupRoute', () => {
 
     renderSetup();
 
-    fireEvent.change(screen.getByPlaceholderText(/search by course or city/i), {
+    fireEvent.change(screen.getByPlaceholderText(/search courses or cities/i), {
       target: { value: 'Pine' },
     });
 
@@ -157,7 +157,7 @@ describe('SetupRoute', () => {
     await waitFor(() => expect(mocks.importCourseToRound).toHaveBeenCalledWith(7, '991'));
 
     await waitFor(() =>
-      expect(screen.getByPlaceholderText(/search by course or city/i)).toHaveValue(''),
+      expect(screen.getByPlaceholderText(/search courses or cities/i)).toHaveValue(''),
     );
   });
 
@@ -183,7 +183,7 @@ describe('SetupRoute', () => {
     renderSetup();
 
     await waitFor(() => {
-      expect(screen.getByText(/completed and locked/i)).toBeInTheDocument();
+      expect(screen.getByText(/complete and locked/i)).toBeInTheDocument();
     });
 
     expect(screen.getByRole('button', { name: /add player/i })).toBeDisabled();

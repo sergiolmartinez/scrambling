@@ -12,8 +12,8 @@ export function NavItem({ to, children }: NavItemProps): JSX.Element {
         cn(
           'inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium transition-colors',
           isActive
-            ? 'border-cyan-300/70 bg-cyan-200/90 text-slate-900'
-            : 'border-slate-700/70 text-slate-200 hover:border-sky-300/40 hover:bg-slate-900/75 hover:text-white',
+            ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)]'
+            : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]/50 hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text)]',
         )
       }
       to={to}
