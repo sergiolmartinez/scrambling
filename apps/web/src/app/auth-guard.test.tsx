@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProtectedRoute, PublicOnlyRoute } from '@/app/auth-guard';
@@ -38,6 +38,26 @@ describe('auth guards', () => {
     );
 
     expect(screen.getByText(/sign in screen/i)).toBeInTheDocument();
+  });
+
+  it('preserves next path when redirecting unauthenticated users', () => {
+    function SignInLocation(): JSX.Element {
+      const location = useLocation();
+      return <div>{location.pathname + location.search}</div>;
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/setup?round=10']}>
+        <Routes>
+          <Route element={<ProtectedRoute />}>
+            <Route path='/setup' element={<div>Setup Content</div>} />
+          </Route>
+          <Route path='/sign-in' element={<SignInLocation />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/next=%2Fsetup%3Fround%3D10/i)).toBeInTheDocument();
   });
 
   it('allows authenticated users to see protected routes', () => {

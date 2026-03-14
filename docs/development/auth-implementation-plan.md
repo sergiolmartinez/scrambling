@@ -53,5 +53,5 @@ Each implementation prompt must provide:
 - [x] ownership wiring
 - [x] profile page
 - [x] settings page
-- [ ] hardening
-- [ ] docs refresh
+- [x] hardening
+- [x] docs refresh

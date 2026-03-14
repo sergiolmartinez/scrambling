@@ -10,6 +10,7 @@ import { ErrorState } from '@/components/state/error-state';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { apiClient } from '@/lib/api';
+import { getAuthErrorMessage } from '@/lib/auth-error';
 
 const signUpSchema = z.object({
   display_name: z.string().min(1, 'Display name is required.').max(120),
@@ -74,9 +75,7 @@ export function SignUpRoute(): JSX.Element {
           ) : null}
         </div>
 
-        {signUp.isError ? (
-          <ErrorState message='Sign up failed. If this email already exists, try signing in.' />
-        ) : null}
+        {signUp.isError ? <ErrorState message={getAuthErrorMessage(signUp.error, 'sign-up')} /> : null}
 
         <Button type='submit' className='min-h-11 w-full' disabled={signUp.isPending}>
           {signUp.isPending ? 'Creating account...' : 'Create Account'}

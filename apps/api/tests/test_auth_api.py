@@ -116,3 +116,13 @@ def test_rounds_endpoints_require_authentication(client: TestClient) -> None:
     response = client.post("/api/v1/rounds", json={})
     assert response.status_code == 401
     assert response.json()["code"] == "unauthorized"
+
+
+def test_course_and_user_endpoints_require_authentication(client: TestClient) -> None:
+    course_response = client.get("/api/v1/courses/search?q=Miami")
+    assert course_response.status_code == 401
+    assert course_response.json()["code"] == "unauthorized"
+
+    user_response = client.get("/api/v1/users/me")
+    assert user_response.status_code == 401
+    assert user_response.json()["code"] == "unauthorized"

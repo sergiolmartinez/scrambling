@@ -52,6 +52,16 @@ function renderSettings(): void {
 }
 
 describe('SettingsRoute', () => {
+  it('signs out and clears session', async () => {
+    mocks.signOut.mockResolvedValue(undefined);
+
+    renderSettings();
+    fireEvent.click(screen.getByRole('button', { name: /sign out/i }));
+
+    await waitFor(() => expect(mocks.signOut).toHaveBeenCalledTimes(1));
+    expect(mocks.clearSession).toHaveBeenCalledTimes(1);
+  });
+
   it('updates display name', async () => {
     mocks.updateCurrentUser.mockResolvedValue({
       id: 1,

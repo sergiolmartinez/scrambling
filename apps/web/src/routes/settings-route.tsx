@@ -14,6 +14,7 @@ import { LogOutIcon, SettingsIcon } from '@/components/ui/icons';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { apiClient } from '@/lib/api';
+import { getAuthErrorMessage } from '@/lib/auth-error';
 
 const settingsSchema = z.object({
   display_name: z.string().min(1, 'Display name is required.').max(120),
@@ -80,7 +81,7 @@ export function SettingsRoute(): JSX.Element {
             ) : null}
             {updateProfile.isSuccess ? <StatusBadge tone='success'>Saved</StatusBadge> : null}
             {updateProfile.isError ? (
-              <ErrorState message='Could not save your display name. Please try again.' />
+              <ErrorState message={getAuthErrorMessage(updateProfile.error, 'update-profile')} />
             ) : null}
           </section>
         </div>

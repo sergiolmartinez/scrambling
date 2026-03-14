@@ -10,6 +10,7 @@ import { ErrorState } from '@/components/state/error-state';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { apiClient } from '@/lib/api';
+import { getAuthErrorMessage } from '@/lib/auth-error';
 
 const signInSchema = z.object({
   email: z.string().email('Enter a valid email address.'),
@@ -68,9 +69,7 @@ export function SignInRoute(): JSX.Element {
           ) : null}
         </div>
 
-        {signIn.isError ? (
-          <ErrorState message='Sign in failed. Check your email and password and try again.' />
-        ) : null}
+        {signIn.isError ? <ErrorState message={getAuthErrorMessage(signIn.error, 'sign-in')} /> : null}
 
         <Button type='submit' className='min-h-11 w-full' disabled={signIn.isPending}>
           {signIn.isPending ? 'Signing in...' : 'Sign In'}

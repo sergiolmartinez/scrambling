@@ -51,6 +51,21 @@ Create environment files:
 
 Auth/session settings are configured in `apps/api/.env.example` (`AUTH_SESSION_*` and `AUTH_PASSWORD_HASH_ITERATIONS`).
 
+## Auth foundation
+
+- Browser auth uses secure HTTP-only cookies from the API.
+- Frontend session restore uses `GET /api/v1/auth/me`.
+- Auth routes:
+  - `POST /api/v1/auth/sign-up`
+  - `POST /api/v1/auth/sign-in`
+  - `POST /api/v1/auth/sign-out`
+  - `GET /api/v1/auth/me`
+  - `GET /api/v1/users/me`
+  - `PATCH /api/v1/users/me`
+- Protected app routes include setup/scoring/leaderboard/summary plus profile/settings.
+
+If account creation/sign-in shows connection errors in the browser, ensure the API is running on the configured URL before starting auth flows.
+
 ## Run
 
 ### Web

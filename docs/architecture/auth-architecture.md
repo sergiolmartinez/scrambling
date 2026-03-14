@@ -113,6 +113,16 @@ Scrambling uses secure HTTP-only cookie-based authentication for the browser cli
 - Profile route: `/profile` with display name, email, account created date, and initials placeholder.
 - Settings route: `/settings` with theme preference, display name update, and sign-out action.
 
+## Hardening Notes (Auth 04)
+
+- Route protection behavior is verified for:
+  - unauthenticated redirect to sign-in with `next` target preserved
+  - authenticated redirect away from auth screens
+- Ownership behavior is verified for:
+  - round owner scoping across different authenticated users
+  - legacy ownerless rounds being claimed on first authenticated access
+- Auth UX copy includes network-aware messaging so unreachable API/server states are explicit.
+
 ### Security Expectations
 
 - cookies should be HTTP-only
