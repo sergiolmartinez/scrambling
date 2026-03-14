@@ -22,3 +22,7 @@ class AuthUserRead(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class UserMeUpdateRequest(BaseModel):
+    display_name: str = Field(min_length=1, max_length=120)

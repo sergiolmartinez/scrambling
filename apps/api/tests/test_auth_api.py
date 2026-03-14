@@ -86,3 +86,33 @@ def test_me_requires_auth_cookie(client: TestClient) -> None:
     response = client.get("/api/v1/auth/me")
     assert response.status_code == 401
     assert response.json()["code"] == "unauthorized"
+
+
+def test_users_me_read_and_update(client: TestClient) -> None:
+    sign_up = client.post(
+        "/api/v1/auth/sign-up",
+        json={
+            "email": "sergio@example.com",
+            "display_name": "Sergio",
+            "password": "supersecure123",
+        },
+    )
+    assert sign_up.status_code == 201
+
+    read_me = client.get("/api/v1/users/me")
+    assert read_me.status_code == 200
+    assert read_me.json()["display_name"] == "Sergio"
+
+    update_me = client.patch("/api/v1/users/me", json={"display_name": "Sergio M"})
+    assert update_me.status_code == 200
+    assert update_me.json()["display_name"] == "Sergio M"
+
+    auth_me = client.get("/api/v1/auth/me")
+    assert auth_me.status_code == 200
+    assert auth_me.json()["display_name"] == "Sergio M"
+
+
+def test_rounds_endpoints_require_authentication(client: TestClient) -> None:
+    response = client.post("/api/v1/rounds", json={})
+    assert response.status_code == 401
+    assert response.json()["code"] == "unauthorized"

@@ -13,3 +13,4 @@ class User(Base, TimestampMixin):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 
     auth_sessions = relationship("AuthSession", back_populates="user", cascade="all, delete-orphan")
+    rounds = relationship("Round", back_populates="owner")

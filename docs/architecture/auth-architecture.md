@@ -49,6 +49,11 @@ Optional:
 - PATCH /api/v1/users/me
 - GET /api/v1/users/me
 
+Implemented in Auth 03:
+
+- PATCH /api/v1/users/me
+- GET /api/v1/users/me
+
 ## Session Strategy
 
 Choose one and document it in implementation:
@@ -99,6 +104,14 @@ Scrambling uses secure HTTP-only cookie-based authentication for the browser cli
   - unauthenticated users are redirected to sign-in
   - authenticated users are redirected away from auth screens into app routes
 - Sign-out clears server session via `POST /api/v1/auth/sign-out` and returns user to sign-in
+
+## Ownership and Account Pages (Auth 03)
+
+- New rounds are created with `owner_user_id` assigned to the authenticated user.
+- Round access and mutation routes enforce owner scoping.
+- Legacy ownerless rounds are claimed by the first authenticated user who accesses them.
+- Profile route: `/profile` with display name, email, account created date, and initials placeholder.
+- Settings route: `/settings` with theme preference, display name update, and sign-out action.
 
 ### Security Expectations
 

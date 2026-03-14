@@ -34,6 +34,7 @@ export type ApiClient = {
   signIn: (payload: { email: string; password: string }) => Promise<AuthUserRead>;
   signOut: () => Promise<void>;
   getCurrentUser: () => Promise<AuthUserRead>;
+  updateCurrentUser: (payload: { display_name: string }) => Promise<AuthUserRead>;
   createRound: () => Promise<RoundRead>;
   getRoundAggregate: (roundId: number) => Promise<RoundAggregateRead>;
   addPlayer: (roundId: number, payload: { display_name: string; sort_order: number }) => Promise<RoundPlayerRead>;
@@ -140,6 +141,12 @@ export function createApiClient(baseUrl: string): ApiClient {
     },
     async getCurrentUser(): Promise<AuthUserRead> {
       return requestJson<AuthUserRead>('/auth/me', { method: 'GET' });
+    },
+    async updateCurrentUser(payload: { display_name: string }): Promise<AuthUserRead> {
+      return requestJson<AuthUserRead>('/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
     },
     async createRound(): Promise<RoundRead> {
       return requestJson<RoundRead>('/rounds', {

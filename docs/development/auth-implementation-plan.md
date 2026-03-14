@@ -50,8 +50,8 @@ Each implementation prompt must provide:
 
 - [x] backend auth foundation
 - [x] frontend auth foundation
-- [ ] ownership wiring
-- [ ] profile page
-- [ ] settings page
+- [x] ownership wiring
+- [x] profile page
+- [x] settings page
 - [ ] hardening
 - [ ] docs refresh

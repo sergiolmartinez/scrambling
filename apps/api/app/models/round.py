@@ -17,6 +17,9 @@ class Round(Base, TimestampMixin):
     __tablename__ = "rounds"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    owner_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     status: Mapped[RoundStatus] = mapped_column(
         Enum(
             RoundStatus,
@@ -34,6 +37,7 @@ class Round(Base, TimestampMixin):
     notes: Mapped[str] = mapped_column(String(500), nullable=True)
 
     course = relationship("Course", back_populates="rounds")
+    owner = relationship("User", back_populates="rounds")
     players = relationship("RoundPlayer", back_populates="round", cascade="all, delete-orphan")
     hole_scores = relationship("HoleScore", back_populates="round", cascade="all, delete-orphan")
     shot_contributions = relationship(

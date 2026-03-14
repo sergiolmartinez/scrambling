@@ -16,6 +16,11 @@ const navItems = [
   { to: '/summary', label: 'Summary', shortLabel: '4' },
 ];
 
+const accountNavItems = [
+  { to: '/profile', label: 'Profile' },
+  { to: '/settings', label: 'Settings' },
+];
+
 export function AppLayout(): JSX.Element {
   const location = useLocation();
   const [isOnline, setIsOnline] = useState<boolean>(() => window.navigator.onLine);
@@ -70,6 +75,11 @@ export function AppLayout(): JSX.Element {
                 {item.label}
               </NavItem>
             ))}
+            {accountNavItems.map((item) => (
+              <NavItem key={item.to} to={item.to}>
+                {item.label}
+              </NavItem>
+            ))}
           </nav>
         </div>
         <div className='mx-auto max-w-6xl px-4 pb-4 md:px-6'>
@@ -90,6 +100,10 @@ export function AppLayout(): JSX.Element {
 }
 
 function progressWidth(pathname: string): number {
+  if (pathname.startsWith('/profile') || pathname.startsWith('/settings')) {
+    return 100;
+  }
+
   const index = navItems.findIndex((item) => pathname.startsWith(item.to));
   if (index === -1) {
     return 25;
